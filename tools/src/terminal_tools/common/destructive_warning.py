@@ -50,6 +50,23 @@ def _decode_shell_word(raw: str) -> list[str]:
     return shlex.split("".join(parts), comments=False, posix=True)
 
 
+def _shell_command(words: list[str], raw_words: list[str]) -> tuple[list[str], int]:
+    """Keep Bash time-keyword assignments distinct from external time argv."""
+    start = 0
+    while start < len(raw_words) and raw_words[start] == "time":
+        start += 1
+        if start < len(raw_words) and raw_words[start] == "-p":
+            start += 1
+        if start < len(raw_words) and raw_words[start] == "--":
+            start += 1
+    assignments = 0
+    for raw in raw_words[start:]:
+        if not _ASSIGNMENT.match(raw):
+            break
+        assignments += 1
+    return words[start:], assignments
+
+
 def _shell_commands(text: str) -> list[tuple[list[str], int]]:
     """Read simple words and count initial *unquoted* shell assignments.
 
@@ -59,7 +76,7 @@ def _shell_commands(text: str) -> list[tuple[list[str], int]]:
     """
     commands: list[tuple[list[str], int]] = []
     words: list[str] = []
-    assignments = 0
+    raw_words: list[str] = []
     pos = 0
     while pos < len(text):
         match = _SHELL_TOKEN.match(text, pos)
@@ -68,9 +85,9 @@ def _shell_commands(text: str) -> list[tuple[list[str], int]]:
         pos = match.end()
         if match.lastgroup == "separator":
             if words:
-                commands.append((words, assignments))
+                commands.append(_shell_command(words, raw_words))
                 words = []
-                assignments = 0
+                raw_words = []
         elif match.lastgroup == "word":
             raw = match.group()
             try:
@@ -81,11 +98,10 @@ def _shell_commands(text: str) -> list[tuple[list[str], int]]:
                 continue  # An unquoted backslash-newline is not an argument.
             if len(word) != 1:
                 return []
-            if len(words) == assignments and _ASSIGNMENT.match(raw):
-                assignments += 1
+            raw_words.append(raw)
             words.append(word[0])
     if words:
-        commands.append((words, assignments))
+        commands.append(_shell_command(words, raw_words))
     return commands
 
 
