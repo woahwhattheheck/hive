@@ -9,17 +9,149 @@ claudecode's BashTool/destructiveCommandWarning.ts.
 from __future__ import annotations
 
 import re
+import shlex
 from collections.abc import Sequence
 
-# Command-position prefixes that displace the verb without changing what it
-# does: ``sudo rm -rf /`` deletes exactly what ``rm -rf /`` deletes. Also
-# covers leading environment assignments (``FOO=1 rm -rf /``) and the
-# ``xargs`` spelling reached through a pipe. Without this the file-deletion
-# patterns stay silent under ``sudo`` while the git/kubectl/terraform
-# patterns, which are not command-anchored, still warn.
-_CMD_PREFIX = (
-    r"(?:(?:sudo|doas|nohup|time|command|env|xargs)(?:\s+-\w+(?:\s+[^-\s]\S*)?)*\s+"
-    r"|[A-Za-z_]\w*=\S*\s+)*"
+# Only the rm catalog uses command-position parsing. Other advisory patterns
+# retain their existing matching and priority. No command is executed here.
+_SHELL_TOKEN = re.compile(
+    r"(?P<space>[ \t\r]+)|(?P<comment>\#[^\n]*)|(?P<separator>[;&|\n()]+)"
+    r"|(?P<word>(?:[^\s'\"\\;&|()]+|\\[\s\S]|'[^']*'|\"(?:\\[\s\S]|[^\"\\])*\")+)"
+)
+_ASSIGNMENT = re.compile(r"^[A-Za-z_]\w*=")
+
+# (no-operand short flags, operand short flags, no-operand long flags,
+# operand long flags). Unsupported and lookup/list-only options are not
+# assumed to execute the following word. This is intentionally not a shell
+# evaluator or a complete option catalog for every platform.
+_WRAPPER_OPTIONS = {
+    "sudo": ("AbEHknPSis", "CDghprRTtu", (), ()),
+    "doas": ("n", "u", (), ()),
+    "nohup": ("", "", (), ()),
+    "time": ("apqv", "fo", (), ()),
+    "command": ("p", "", (), ()),
+    "env": ("iv", "uC", ("ignore-environment", "debug"), ("unset", "chdir")),
+    "xargs": ("0oprtx", "adEILnPs", (), ()),
+}
+
+
+_WORD_PART = re.compile(r"'[^']*'|\"(?:\\[\s\S]|[^\"\\])*\"|\\[\s\S]|[^'\"\\]+")
+_CONTINUATION = re.compile(r"\\\\|\\\n")
+
+
+def _decode_shell_word(raw: str) -> list[str]:
+    """Remove escaped newlines outside single quotes before shlex decoding."""
+    parts = []
+    for match in _WORD_PART.finditer(raw):
+        part = match.group()
+        if not part.startswith("'"):
+            part = _CONTINUATION.sub(lambda m: "" if m.group() == "\\\n" else m.group(), part)
+        parts.append(part)
+    return shlex.split("".join(parts), comments=False, posix=True)
+
+
+def _shell_commands(text: str) -> list[tuple[list[str], int]]:
+    """Read simple words and count initial *unquoted* shell assignments.
+
+    Word spans retain their quotes until shlex decodes them, so quoted
+    punctuation cannot become a separator and a quoted NAME=value cannot
+    become a shell assignment. This is not a general shell evaluator.
+    """
+    commands: list[tuple[list[str], int]] = []
+    words: list[str] = []
+    assignments = 0
+    pos = 0
+    while pos < len(text):
+        match = _SHELL_TOKEN.match(text, pos)
+        if match is None:
+            return []
+        pos = match.end()
+        if match.lastgroup == "separator":
+            if words:
+                commands.append((words, assignments))
+                words = []
+                assignments = 0
+        elif match.lastgroup == "word":
+            raw = match.group()
+            try:
+                word = _decode_shell_word(raw)
+            except ValueError:
+                return []
+            if not word:
+                continue  # An unquoted backslash-newline is not an argument.
+            if len(word) != 1:
+                return []
+            if len(words) == assignments and _ASSIGNMENT.match(raw):
+                assignments += 1
+            words.append(word[0])
+    if words:
+        commands.append((words, assignments))
+    return commands
+
+
+def _after_wrapper_options(words: list[str], start: int, program: str) -> int | None:
+    """Skip only options with known arity; never consume a guessed operand."""
+    flags, value_flags, long_flags, long_value_flags = _WRAPPER_OPTIONS[program]
+    index = start
+    while index < len(words):
+        word = words[index]
+        if word == "--":
+            return index + 1
+        if not word.startswith("-") or word == "-":
+            return index
+        if word.startswith("--"):
+            option, equal, _value = word[2:].partition("=")
+            if option in long_flags and not equal:
+                index += 1
+                continue
+            if option not in long_value_flags:
+                return None
+            index += 1
+            if not equal:
+                if index >= len(words):
+                    return None
+                index += 1
+            continue
+        for position, flag in enumerate(word[1:], start=1):
+            if flag in value_flags:
+                if position == len(word) - 1:
+                    index += 1
+                    if index >= len(words):
+                        return None
+                break
+            if flag not in flags:
+                return None
+        index += 1
+    return index
+
+
+def _rm_command(words: list[str], *, initial_assignments: int = 0) -> str | None:
+    """Unwrap known execution prefixes while preserving argv word boundaries."""
+    index = initial_assignments
+    allow_assignments = False
+    while index < len(words):
+        if allow_assignments:
+            while index < len(words) and _ASSIGNMENT.match(words[index]):
+                index += 1
+            if index == len(words):
+                return None
+        program = words[index]
+        if program == "rm":
+            return shlex.join(words[index:])
+        if program not in _WRAPPER_OPTIONS:
+            return None
+        next_index = _after_wrapper_options(words, index + 1, program)
+        if next_index is None:
+            return None
+        index = next_index
+        # env and sudo accept NAME=value before their executable; e.g. nohup
+        # and command instead treat NAME=value as the executable name itself.
+        allow_assignments = program in ("env", "sudo")
+    return None
+
+
+_RM_WARNINGS = frozenset(
+    ("may recursively force-remove files", "may recursively remove files", "may force-remove files")
 )
 
 _PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
@@ -46,13 +178,13 @@ _PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
     # File deletion — most specific patterns first so the warning is descriptive
     (
         re.compile(
-            rf"(^|[;&|\n]\s*){_CMD_PREFIX}rm\s+-[a-zA-Z]*[rR][a-zA-Z]*f"
-            rf"|(^|[;&|\n]\s*){_CMD_PREFIX}rm\s+-[a-zA-Z]*f[a-zA-Z]*[rR]"
+            r"^rm\s+-[a-zA-Z]*[rR][a-zA-Z]*f"
+            r"|^rm\s+-[a-zA-Z]*f[a-zA-Z]*[rR]"
         ),
         "may recursively force-remove files",
     ),
-    (re.compile(rf"(^|[;&|\n]\s*){_CMD_PREFIX}rm\s+-[a-zA-Z]*[rR]"), "may recursively remove files"),
-    (re.compile(rf"(^|[;&|\n]\s*){_CMD_PREFIX}rm\s+-[a-zA-Z]*f"), "may force-remove files"),
+    (re.compile(r"^rm\s+-[a-zA-Z]*[rR]"), "may recursively remove files"),
+    (re.compile(r"^rm\s+-[a-zA-Z]*f"), "may force-remove files"),
     # Database
     (
         re.compile(r"\b(DROP|TRUNCATE)\s+(TABLE|DATABASE|SCHEMA)\b", re.IGNORECASE),
@@ -66,19 +198,28 @@ _PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
 
 
 def get_warning(command: str | Sequence[str]) -> str | None:
-    """Return a warning string if the command matches a destructive pattern.
+    """Return the first matching advisory without executing the command.
 
-    For argv-style invocations (``command=["rm", "-rf", "/tmp/x"]``), we
-    join with spaces so the same regex catalog applies. Returns None
-    when nothing matches.
+    For rm warnings, parse shell-string boundaries or preserve supplied argv
+    boundaries before unwrapping known prefixes. Other catalog behavior is
+    unchanged, including its original space-joined argv representation.
     """
     if isinstance(command, (list, tuple)):
-        text = " ".join(str(c) for c in command)
+        words = [str(c) for c in command]
+        text = " ".join(words)
+        simple_commands = [(words, 0)]
     else:
         text = command
+        simple_commands = _shell_commands(text)
 
+    rm_commands = [
+        parsed
+        for words, assignments in simple_commands
+        if (parsed := _rm_command(words, initial_assignments=assignments)) is not None
+    ]
     for pattern, message in _PATTERNS:
-        if pattern.search(text):
+        candidates = rm_commands if message in _RM_WARNINGS else (text,)
+        if any(pattern.search(candidate) for candidate in candidates):
             return message
     return None
 
