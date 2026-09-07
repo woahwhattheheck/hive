@@ -12,10 +12,9 @@ from pathlib import Path
 
 import httpx
 import pytest
+from aden_tools.tools.image_gen_tool import image_gen_tool, register_tools
 from fastmcp import FastMCP
 from mcp.types import ImageContent, TextContent
-
-from aden_tools.tools.image_gen_tool import image_gen_tool, register_tools
 
 # Smallest valid 1×1 PNG (8-bit grayscale) — reused as both the generated
 # output bytes and a reference-image fixture.

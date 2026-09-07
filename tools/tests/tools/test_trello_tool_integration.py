@@ -3,9 +3,8 @@
 import os
 
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.trello_tool import register_tools
+from fastmcp import FastMCP
 
 
 @pytest.mark.skipif(

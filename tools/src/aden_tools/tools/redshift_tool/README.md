@@ -48,14 +48,17 @@ Configure via Hive's credential store:
 from framework.credentials import CredentialStore
 
 store = CredentialStore()
-store.set("redshift", {
-    "aws_access_key_id": "your-access-key-id",
-    "aws_secret_access_key": "your-secret-access-key",
-    "cluster_identifier": "your-cluster-name",
-    "database": "your-database-name",
-    "region": "us-east-1",
-    "db_user": "your-db-user"  # Optional
-})
+store.set(
+    "redshift",
+    {
+        "aws_access_key_id": "your-access-key-id",
+        "aws_secret_access_key": "your-secret-access-key",
+        "cluster_identifier": "your-cluster-name",
+        "database": "your-database-name",
+        "region": "us-east-1",
+        "db_user": "your-db-user",  # Optional
+    },
+)
 ```
 
 ### AWS IAM Permissions
@@ -106,17 +109,14 @@ List all schemas in the Redshift database (excluding system schemas).
 
 **Returns:**
 ```python
-{
-    "schemas": ["public", "sales", "analytics", "marketing"],
-    "count": 4
-}
+{"schemas": ["public", "sales", "analytics", "marketing"], "count": 4}
 ```
 
 **Example:**
 ```python
 schemas = redshift_list_schemas()
 print(f"Found {schemas['count']} schemas")
-for schema in schemas['schemas']:
+for schema in schemas["schemas"]:
     print(f"  - {schema}")
 ```
 
@@ -133,12 +133,8 @@ List all tables in a specific schema.
 ```python
 {
     "schema": "sales",
-    "tables": [
-        {"name": "customers", "type": "BASE TABLE"},
-        {"name": "orders", "type": "BASE TABLE"},
-        {"name": "products", "type": "BASE TABLE"}
-    ],
-    "count": 3
+    "tables": [{"name": "customers", "type": "BASE TABLE"}, {"name": "orders", "type": "BASE TABLE"}, {"name": "products", "type": "BASE TABLE"}],
+    "count": 3,
 }
 ```
 
@@ -147,7 +143,7 @@ List all tables in a specific schema.
 # List all tables in the sales schema
 tables = redshift_list_tables(schema="sales")
 print(f"Tables in {tables['schema']}:")
-for table in tables['tables']:
+for table in tables["tables"]:
     print(f"  - {table['name']} ({table['type']})")
 ```
 
@@ -167,29 +163,11 @@ Get detailed schema and metadata for a specific table.
     "schema": "sales",
     "table": "customers",
     "columns": [
-        {
-            "name": "customer_id",
-            "type": "integer",
-            "max_length": null,
-            "nullable": false,
-            "default": null
-        },
-        {
-            "name": "email",
-            "type": "character varying",
-            "max_length": 255,
-            "nullable": false,
-            "default": null
-        },
-        {
-            "name": "created_at",
-            "type": "timestamp without time zone",
-            "max_length": null,
-            "nullable": true,
-            "default": "now()"
-        }
+        {"name": "customer_id", "type": "integer", "max_length": null, "nullable": false, "default": null},
+        {"name": "email", "type": "character varying", "max_length": 255, "nullable": false, "default": null},
+        {"name": "created_at", "type": "timestamp without time zone", "max_length": null, "nullable": true, "default": "now()"},
     ],
-    "column_count": 3
+    "column_count": 3,
 }
 ```
 
@@ -199,8 +177,8 @@ Get detailed schema and metadata for a specific table.
 schema_info = redshift_get_table_schema(schema="sales", table="customers")
 print(f"Table: {schema_info['schema']}.{schema_info['table']}")
 print(f"Columns ({schema_info['column_count']}):")
-for col in schema_info['columns']:
-    nullable = "NULL" if col['nullable'] else "NOT NULL"
+for col in schema_info["columns"]:
+    nullable = "NULL" if col["nullable"] else "NOT NULL"
     print(f"  - {col['name']}: {col['type']} {nullable}")
 ```
 
@@ -225,10 +203,10 @@ Execute a read-only SQL query (SELECT statements only for security).
     "rows": [
         {"customer_id": 1, "email": "john@example.com", "total_orders": 5},
         {"customer_id": 2, "email": "jane@example.com", "total_orders": 3},
-        {"customer_id": 3, "email": "alice@example.com", "total_orders": 8}
+        {"customer_id": 3, "email": "alice@example.com", "total_orders": 8},
     ],
     "row_count": 3,
-    "statement_id": "abc-123-xyz"
+    "statement_id": "abc-123-xyz",
 }
 ```
 
@@ -238,7 +216,7 @@ Execute a read-only SQL query (SELECT statements only for security).
     "format": "csv",
     "data": "customer_id,email,total_orders\n1,john@example.com,5\n2,jane@example.com,3\n3,alice@example.com,8",
     "row_count": 3,
-    "statement_id": "abc-123-xyz"
+    "statement_id": "abc-123-xyz",
 }
 ```
 
@@ -246,13 +224,12 @@ Execute a read-only SQL query (SELECT statements only for security).
 ```python
 # Execute a simple query
 result = redshift_execute_query(
-    sql="SELECT customer_id, email, COUNT(*) as order_count FROM orders GROUP BY customer_id, email LIMIT 10",
-    format="json"
+    sql="SELECT customer_id, email, COUNT(*) as order_count FROM orders GROUP BY customer_id, email LIMIT 10", format="json"
 )
 
 if "error" not in result:
     print(f"Retrieved {result['row_count']} rows")
-    for row in result['rows']:
+    for row in result["rows"]:
         print(f"Customer {row['customer_id']}: {row['order_count']} orders")
 else:
     print(f"Error: {result['error']}")
@@ -276,7 +253,7 @@ Execute a query and export results optimized for downstream workflows.
     "format": "csv",
     "data": "product_id,product_name,inventory_count\n101,Widget A,150\n102,Widget B,75\n103,Widget C,220",
     "row_count": 3,
-    "statement_id": "xyz-789"
+    "statement_id": "xyz-789",
 }
 ```
 
@@ -284,14 +261,13 @@ Execute a query and export results optimized for downstream workflows.
 ```python
 # Export inventory data for processing
 result = redshift_export_query_results(
-    sql="SELECT product_id, product_name, inventory_count FROM inventory WHERE inventory_count < 100",
-    format="csv"
+    sql="SELECT product_id, product_name, inventory_count FROM inventory WHERE inventory_count < 100", format="csv"
 )
 
 if "error" not in result:
     # Save to file or send to another system
     with open("low_inventory.csv", "w") as f:
-        f.write(result['data'])
+        f.write(result["data"])
     print(f"Exported {result['row_count']} products with low inventory")
 ```
 
@@ -302,10 +278,7 @@ if "error" not in result:
 All functions return a dict with an `error` key if something goes wrong:
 
 ```python
-{
-    "error": "AWS credentials not configured",
-    "help": "Set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables..."
-}
+{"error": "AWS credentials not configured", "help": "Set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables..."}
 ```
 
 Common errors:
@@ -340,14 +313,10 @@ result = redshift_execute_query(sql=sql, format="json")
 if "error" not in result:
     # Generate email report
     report = "Daily Sales Report\\n\\n"
-    for row in result['rows']:
+    for row in result["rows"]:
         report += f"{row['product_category']}: ${row['total_revenue']:,.2f} ({row['unique_customers']} customers)\\n"
 
-    send_email(
-        to="team@company.com",
-        subject="Daily Sales Report",
-        html=f"<pre>{report}</pre>"
-    )
+    send_email(to="team@company.com", subject="Daily Sales Report", html=f"<pre>{report}</pre>")
 ```
 
 ### Inventory Monitoring with Slack Alerts
@@ -368,10 +337,10 @@ WHERE current_stock < minimum_stock
 
 result = redshift_execute_query(sql=sql)
 
-if result['row_count'] > 0:
+if result["row_count"] > 0:
     # Send Slack alert
     message = f"⚠️ Low Inventory Alert: {result['row_count']} products below minimum stock\\n\\n"
-    for item in result['rows']:
+    for item in result["rows"]:
         message += f"• {item['product_name']} at {item['warehouse_name']}: {item['current_stock']}/{item['minimum_stock']}\\n"
 
     slack_send_message(channel="#inventory", text=message)
@@ -401,11 +370,7 @@ WHERE signup_date >= DATEADD(month, -6, CURRENT_DATE)
 result = redshift_export_query_results(sql=sql, format="csv")
 
 # Upload to S3, Google Sheets, or other systems
-upload_to_s3(
-    bucket="analytics-exports",
-    key="cohorts/latest.csv",
-    data=result['data']
-)
+upload_to_s3(bucket="analytics-exports", key="cohorts/latest.csv", data=result["data"])
 ```
 
 ### Schema Documentation
@@ -418,24 +383,24 @@ schemas = redshift_list_schemas()
 
 documentation = "# Database Schema Documentation\\n\\n"
 
-for schema_name in schemas['schemas']:
+for schema_name in schemas["schemas"]:
     documentation += f"## Schema: {schema_name}\\n\\n"
 
     # Get tables in schema
     tables = redshift_list_tables(schema=schema_name)
 
-    for table in tables['tables']:
+    for table in tables["tables"]:
         documentation += f"### Table: {table['name']}\\n\\n"
 
         # Get table schema
-        schema_info = redshift_get_table_schema(schema=schema_name, table=table['name'])
+        schema_info = redshift_get_table_schema(schema=schema_name, table=table["name"])
 
         documentation += "| Column | Type | Nullable | Default |\\n"
         documentation += "|--------|------|----------|---------|\\n"
 
-        for col in schema_info['columns']:
-            nullable = "Yes" if col['nullable'] else "No"
-            default = col['default'] or "-"
+        for col in schema_info["columns"]:
+            nullable = "Yes" if col["nullable"] else "No"
+            default = col["default"] or "-"
             documentation += f"| {col['name']} | {col['type']} | {nullable} | {default} |\\n"
 
         documentation += "\\n"
@@ -454,14 +419,14 @@ Fetch metrics for dashboard visualization:
 queries = {
     "daily_revenue": "SELECT SUM(amount) as revenue FROM orders WHERE date = CURRENT_DATE",
     "active_users": "SELECT COUNT(DISTINCT user_id) FROM user_activity WHERE date = CURRENT_DATE",
-    "conversion_rate": "SELECT (COUNT(DISTINCT purchaser_id)::float / COUNT(DISTINCT visitor_id)) * 100 as rate FROM funnel_view WHERE date = CURRENT_DATE"
+    "conversion_rate": "SELECT (COUNT(DISTINCT purchaser_id)::float / COUNT(DISTINCT visitor_id)) * 100 as rate FROM funnel_view WHERE date = CURRENT_DATE",
 }
 
 metrics = {}
 for metric_name, sql in queries.items():
     result = redshift_execute_query(sql=sql)
-    if "error" not in result and result['row_count'] > 0:
-        metrics[metric_name] = result['rows'][0]
+    if "error" not in result and result["row_count"] > 0:
+        metrics[metric_name] = result["rows"][0]
 
 print("Today's Metrics:")
 print(f"  Revenue: ${metrics['daily_revenue']['revenue']:,.2f}")
@@ -525,9 +490,10 @@ GRANT SELECT ON ALL TABLES IN SCHEMA sales TO your_db_user;
 Verify your cluster identifier and region:
 ```python
 import boto3
-client = boto3.client('redshift', region_name='us-east-1')
+
+client = boto3.client("redshift", region_name="us-east-1")
 clusters = client.describe_clusters()
-for cluster in clusters['Clusters']:
+for cluster in clusters["Clusters"]:
     print(f"Cluster: {cluster['ClusterIdentifier']} - Status: {cluster['ClusterStatus']}")
 ```
 

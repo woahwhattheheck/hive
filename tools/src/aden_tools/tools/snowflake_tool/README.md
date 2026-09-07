@@ -62,17 +62,13 @@ result = snowflake_execute_sql(
 )
 
 # Poll until complete
-snowflake_get_statement_status(
-    statement_handle=result["statement_handle"]
-)
+snowflake_get_statement_status(statement_handle=result["statement_handle"])
 ```
 
 ### Cancel a running query
 
 ```python
-snowflake_cancel_statement(
-    statement_handle="01abc123-0000-0001-0000-000100020003"
-)
+snowflake_cancel_statement(statement_handle="01abc123-0000-0001-0000-000100020003")
 ```
 
 ## Response Format

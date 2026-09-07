@@ -3,9 +3,8 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.huggingface_tool.huggingface_tool import register_tools
+from fastmcp import FastMCP
 
 ENV = {"HUGGINGFACE_TOKEN": "hf_test_token"}
 

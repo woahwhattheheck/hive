@@ -31,52 +31,29 @@ export MONGODB_DATA_SOURCE="your_cluster_name"  # e.g. "Cluster0"
 
 ### Find documents
 ```python
-mongodb_find(
-    database="mydb",
-    collection="users",
-    filter='{"status": "active"}',
-    sort='{"created": -1}',
-    limit=10
-)
+mongodb_find(database="mydb", collection="users", filter='{"status": "active"}', sort='{"created": -1}', limit=10)
 ```
 
 ### Find a single document
 ```python
-mongodb_find_one(
-    database="mydb",
-    collection="users",
-    filter='{"email": "alice@example.com"}',
-    projection='{"name": 1, "email": 1, "_id": 0}'
-)
+mongodb_find_one(database="mydb", collection="users", filter='{"email": "alice@example.com"}', projection='{"name": 1, "email": 1, "_id": 0}')
 ```
 
 ### Insert a document
 ```python
-mongodb_insert_one(
-    database="mydb",
-    collection="users",
-    document='{"name": "Alice", "email": "alice@example.com", "status": "active"}'
-)
+mongodb_insert_one(database="mydb", collection="users", document='{"name": "Alice", "email": "alice@example.com", "status": "active"}')
 ```
 
 ### Update a document
 ```python
 mongodb_update_one(
-    database="mydb",
-    collection="users",
-    filter='{"email": "alice@example.com"}',
-    update='{"$set": {"status": "inactive"}}',
-    upsert=False
+    database="mydb", collection="users", filter='{"email": "alice@example.com"}', update='{"$set": {"status": "inactive"}}', upsert=False
 )
 ```
 
 ### Delete a document
 ```python
-mongodb_delete_one(
-    database="mydb",
-    collection="users",
-    filter='{"email": "alice@example.com"}'
-)
+mongodb_delete_one(database="mydb", collection="users", filter='{"email": "alice@example.com"}')
 ```
 
 ### Run an aggregation pipeline
@@ -84,7 +61,7 @@ mongodb_delete_one(
 mongodb_aggregate(
     database="mydb",
     collection="orders",
-    pipeline='[{"$match": {"status": "completed"}}, {"$group": {"_id": "$userId", "total": {"$sum": "$amount"}}}]'
+    pipeline='[{"$match": {"status": "completed"}}, {"$group": {"_id": "$userId", "total": {"$sum": "$amount"}}}]',
 )
 ```
 

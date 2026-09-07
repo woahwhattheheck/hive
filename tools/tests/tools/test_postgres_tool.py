@@ -4,9 +4,8 @@ Tests for PostgreSQL MCP tools (refactored single-file version).
 
 import psycopg2 as psycopg
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.postgres_tool import register_tools
+from fastmcp import FastMCP
 
 
 @pytest.fixture

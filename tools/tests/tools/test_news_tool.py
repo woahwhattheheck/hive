@@ -5,9 +5,8 @@ from datetime import date as real_date
 
 import httpx
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.news_tool import news_tool, register_tools
+from fastmcp import FastMCP
 
 
 class DummyResponse:

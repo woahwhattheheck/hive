@@ -17,6 +17,8 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+from pydantic import SecretStr
+
 from core.framework.credentials import (
     CompositeStorage,
     CredentialKey,
@@ -32,7 +34,6 @@ from core.framework.credentials import (
     StaticProvider,
     TemplateResolver,
 )
-from pydantic import SecretStr
 
 
 class TestCredentialKey:

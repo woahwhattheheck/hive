@@ -40,9 +40,7 @@ result = calendly_list_event_types()
 ```python
 # event_type_uri from calendly_list_event_types
 result = calendly_get_availability(
-    event_type_uri="https://api.calendly.com/event_types/XXXXX",
-    start_time="2026-02-01T00:00:00Z",
-    end_time="2026-02-07T23:59:59Z"
+    event_type_uri="https://api.calendly.com/event_types/XXXXX", start_time="2026-02-01T00:00:00Z", end_time="2026-02-07T23:59:59Z"
 )
 # Returns available_times (max 7-day range)
 ```
@@ -51,9 +49,7 @@ result = calendly_get_availability(
 
 ```python
 # Use when you have event type URI and need the shareable link
-result = calendly_get_booking_link(
-    event_type_uri="https://api.calendly.com/event_types/XXXXX"
-)
+result = calendly_get_booking_link(event_type_uri="https://api.calendly.com/event_types/XXXXX")
 # Returns scheduling_url for inclusion in emails or messages
 ```
 
@@ -63,7 +59,7 @@ result = calendly_get_booking_link(
 # event_uri from webhook or scheduled event list
 result = calendly_cancel_event(
     event_uri="https://api.calendly.com/scheduled_events/XXXXX",
-    reason="Meeting rescheduled"  # optional
+    reason="Meeting rescheduled",  # optional
 )
 ```
 

@@ -16,8 +16,6 @@ from unittest.mock import MagicMock, patch
 
 import httpx
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.google_docs_tool.google_docs_tool import (
     GOOGLE_DOCS_API_BASE,
     _get_document_end_index,
@@ -25,6 +23,7 @@ from aden_tools.tools.google_docs_tool.google_docs_tool import (
     _validate_image_uri,
     register_tools,
 )
+from fastmcp import FastMCP
 
 # ---------------------------------------------------------------------------
 # Fixtures

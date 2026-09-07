@@ -52,9 +52,8 @@ if "--stdio" in sys.argv:
 
     rich.console.Console.__init__ = _patched_console_init
 
-from fastmcp import FastMCP  # noqa: E402
-
 from aden_tools.file_ops import register_file_tools  # noqa: E402
+from fastmcp import FastMCP  # noqa: E402
 
 mcp = FastMCP("files-tools")
 register_file_tools(mcp)

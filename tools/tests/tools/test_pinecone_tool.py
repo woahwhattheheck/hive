@@ -3,9 +3,8 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.pinecone_tool.pinecone_tool import register_tools
+from fastmcp import FastMCP
 
 ENV = {"PINECONE_API_KEY": "pc-test-key"}
 

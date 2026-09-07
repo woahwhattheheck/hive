@@ -100,53 +100,35 @@ result = notion_create_page(
 
 ```python
 # Update properties
-result = notion_update_page(
-    page_id="a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-    properties_json='{"Status": {"select": {"name": "Done"}}}'
-)
+result = notion_update_page(page_id="a1b2c3d4-e5f6-7890-abcd-ef1234567890", properties_json='{"Status": {"select": {"name": "Done"}}}')
 
 # Archive a page
-result = notion_update_page(
-    page_id="a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-    archived=True
-)
+result = notion_update_page(page_id="a1b2c3d4-e5f6-7890-abcd-ef1234567890", archived=True)
 ```
 
 ### Query a database
 
 ```python
 # Get all rows from a database
-result = notion_query_database(
-    database_id="a1b2c3d4-e5f6-7890-abcd-ef1234567890"
-)
+result = notion_query_database(database_id="a1b2c3d4-e5f6-7890-abcd-ef1234567890")
 
 # Query with a filter
 result = notion_query_database(
-    database_id="a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-    filter_json='{"property": "Status", "select": {"equals": "In Progress"}}',
-    page_size=25
+    database_id="a1b2c3d4-e5f6-7890-abcd-ef1234567890", filter_json='{"property": "Status", "select": {"equals": "In Progress"}}', page_size=25
 )
 
 # Sort results
-result = notion_query_database(
-    database_id="a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-    sorts_json='[{"property": "Created", "direction": "descending"}]'
-)
+result = notion_query_database(database_id="a1b2c3d4-e5f6-7890-abcd-ef1234567890", sorts_json='[{"property": "Created", "direction": "descending"}]')
 
 # Paginate through results
-result = notion_query_database(
-    database_id="a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-    start_cursor=previous_result["next_cursor"]
-)
+result = notion_query_database(database_id="a1b2c3d4-e5f6-7890-abcd-ef1234567890", start_cursor=previous_result["next_cursor"])
 ```
 
 ### Get a database schema
 
 ```python
 # Retrieve property names and types for a database
-result = notion_get_database(
-    database_id="a1b2c3d4-e5f6-7890-abcd-ef1234567890"
-)
+result = notion_get_database(database_id="a1b2c3d4-e5f6-7890-abcd-ef1234567890")
 # Returns id, title, url, properties (each with type and id)
 ```
 
@@ -154,16 +136,13 @@ result = notion_get_database(
 
 ```python
 # Create a database with default Name column
-result = notion_create_database(
-    parent_page_id="a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-    title="Project Tasks"
-)
+result = notion_create_database(parent_page_id="a1b2c3d4-e5f6-7890-abcd-ef1234567890", title="Project Tasks")
 
 # Create with custom columns
 result = notion_create_database(
     parent_page_id="a1b2c3d4-e5f6-7890-abcd-ef1234567890",
     title="Bug Tracker",
-    properties_json='{"Status": {"select": {"options": [{"name": "Open"}, {"name": "Closed"}]}}, "Priority": {"number": {}}}'
+    properties_json='{"Status": {"select": {"options": [{"name": "Open"}, {"name": "Closed"}]}}, "Priority": {"number": {}}}',
 )
 ```
 
@@ -171,31 +150,20 @@ result = notion_create_database(
 
 ```python
 # Rename a database
-result = notion_update_database(
-    database_id="a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-    title="Renamed Database"
-)
+result = notion_update_database(database_id="a1b2c3d4-e5f6-7890-abcd-ef1234567890", title="Renamed Database")
 
 # Add a new column
-result = notion_update_database(
-    database_id="a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-    properties_json='{"Priority": {"number": {}}}'
-)
+result = notion_update_database(database_id="a1b2c3d4-e5f6-7890-abcd-ef1234567890", properties_json='{"Priority": {"number": {}}}')
 
 # Archive (delete) a database
-result = notion_update_database(
-    database_id="a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-    archived=True
-)
+result = notion_update_database(database_id="a1b2c3d4-e5f6-7890-abcd-ef1234567890", archived=True)
 ```
 
 ### Read page content (block tree)
 
 ```python
 # Get the body content (blocks) of a page
-result = notion_get_block_children(
-    block_id="a1b2c3d4-e5f6-7890-abcd-ef1234567890"
-)
+result = notion_get_block_children(block_id="a1b2c3d4-e5f6-7890-abcd-ef1234567890")
 # Returns blocks with type, text content, and has_children indicator
 ```
 
@@ -207,17 +175,10 @@ result = notion_get_block(block_id="a1b2c3d4-e5f6-7890-abcd-ef1234567890")
 # Returns id, type, text, has_children, archived
 
 # Update block content (must specify the block's type)
-result = notion_update_block(
-    block_id="a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-    content="Updated paragraph text",
-    block_type="paragraph"
-)
+result = notion_update_block(block_id="a1b2c3d4-e5f6-7890-abcd-ef1234567890", content="Updated paragraph text", block_type="paragraph")
 
 # Archive a block (soft-delete)
-result = notion_update_block(
-    block_id="a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-    archived=True
-)
+result = notion_update_block(block_id="a1b2c3d4-e5f6-7890-abcd-ef1234567890", archived=True)
 
 # Delete a block (moves to trash)
 result = notion_delete_block(block_id="a1b2c3d4-e5f6-7890-abcd-ef1234567890")
@@ -227,23 +188,14 @@ result = notion_delete_block(block_id="a1b2c3d4-e5f6-7890-abcd-ef1234567890")
 
 ```python
 # Add paragraphs to a page (newlines create separate blocks)
-result = notion_append_blocks(
-    block_id="a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-    content="First paragraph\nSecond paragraph"
-)
+result = notion_append_blocks(block_id="a1b2c3d4-e5f6-7890-abcd-ef1234567890", content="First paragraph\nSecond paragraph")
 
 # Add a heading
-result = notion_append_blocks(
-    block_id="a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-    content="Section Title",
-    block_type="heading_1"
-)
+result = notion_append_blocks(block_id="a1b2c3d4-e5f6-7890-abcd-ef1234567890", content="Section Title", block_type="heading_1")
 
 # Add a to-do list
 result = notion_append_blocks(
-    block_id="a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-    content="Buy groceries\nClean the house\nWalk the dog",
-    block_type="to_do"
+    block_id="a1b2c3d4-e5f6-7890-abcd-ef1234567890", content="Buy groceries\nClean the house\nWalk the dog", block_type="to_do"
 )
 
 # Supported block types: paragraph, heading_1, heading_2, heading_3,

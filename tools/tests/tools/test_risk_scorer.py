@@ -5,8 +5,6 @@ from __future__ import annotations
 import json
 
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.risk_scorer import register_tools
 from aden_tools.tools.risk_scorer.risk_scorer import (
     SSL_CHECKS,
@@ -14,6 +12,7 @@ from aden_tools.tools.risk_scorer.risk_scorer import (
     _score_category,
     _score_to_grade,
 )
+from fastmcp import FastMCP
 
 
 @pytest.fixture

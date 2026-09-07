@@ -4,9 +4,8 @@ from unittest.mock import MagicMock, patch
 
 import httpx
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.calendar_tool import register_tools
+from fastmcp import FastMCP
 
 
 @pytest.fixture
@@ -592,9 +591,9 @@ class TestTokenRefresh:
         pytest.importorskip("framework.credentials", reason="Requires framework.credentials module")
         from unittest.mock import MagicMock
 
-        from framework.credentials import CredentialStore
-
         from aden_tools.credentials import CredentialStoreAdapter
+
+        from framework.credentials import CredentialStore
 
         # Clear env var
         monkeypatch.delenv("GOOGLE_ACCESS_TOKEN", raising=False)
@@ -636,9 +635,9 @@ class TestTokenRefresh:
     def test_no_lifecycle_manager_without_refresh_token(self, mock_get, mcp, monkeypatch):
         """Lifecycle manager not created without refresh_token."""
         pytest.importorskip("framework.credentials", reason="Requires framework.credentials module")
-        from framework.credentials import CredentialStore
-
         from aden_tools.credentials import CredentialStoreAdapter
+
+        from framework.credentials import CredentialStore
 
         monkeypatch.delenv("GOOGLE_ACCESS_TOKEN", raising=False)
 

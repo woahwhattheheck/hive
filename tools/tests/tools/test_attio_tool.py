@@ -15,7 +15,6 @@ from unittest.mock import MagicMock, patch
 
 import httpx
 import pytest
-
 from aden_tools.tools.attio_tool.attio_tool import (
     ATTIO_API_BASE,
     _AttioClient,

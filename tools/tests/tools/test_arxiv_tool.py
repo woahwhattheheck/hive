@@ -13,9 +13,8 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 
 import arxiv
-from fastmcp import FastMCP
-
 from aden_tools.tools.arxiv_tool.arxiv_tool import register_tools
+from fastmcp import FastMCP
 
 # ---------------------------------------------------------------------------
 # Helpers

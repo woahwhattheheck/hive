@@ -94,7 +94,7 @@ new_page = confluence_create_page(
     space_id="123",
     title="Meeting Notes 2026-03-31",
     body="<h1>Meeting Notes</h1><p>Attendees: Alice, Bob</p>",
-    parent_id="456"  # Optional: make it a child page
+    parent_id="456",  # Optional: make it a child page
 )
 
 # Update an existing page (must increment version number)
@@ -106,7 +106,7 @@ confluence_update_page(
     page_id="789",
     title="Updated Title",
     body="<h1>Updated Content</h1>",
-    version_number=current_version + 1  # Must be current + 1
+    version_number=current_version + 1,  # Must be current + 1
 )
 
 # Get child pages of a parent
@@ -165,7 +165,7 @@ confluence_update_page(
     page_id="123",
     title="Same Title",
     body="<p>Updated content</p>",
-    version_number=current_version + 1  # 6 in this example
+    version_number=current_version + 1,  # 6 in this example
 )
 ```
 
@@ -175,7 +175,10 @@ All functions return error dicts on failure:
 
 ```python
 # Missing credentials
-{"error": "CONFLUENCE_DOMAIN, CONFLUENCE_EMAIL, and CONFLUENCE_API_TOKEN not set", "help": "Generate an API token at https://id.atlassian.com/manage/api-tokens"}
+{
+    "error": "CONFLUENCE_DOMAIN, CONFLUENCE_EMAIL, and CONFLUENCE_API_TOKEN not set",
+    "help": "Generate an API token at https://id.atlassian.com/manage/api-tokens",
+}
 
 # Unauthorized
 {"error": "Unauthorized. Check your Confluence credentials."}

@@ -4,9 +4,8 @@ from unittest.mock import patch
 
 import httpx
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.serpapi_tool import register_tools
+from fastmcp import FastMCP
 
 
 @pytest.fixture

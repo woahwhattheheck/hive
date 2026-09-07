@@ -3,9 +3,8 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.azure_sql_tool.azure_sql_tool import register_tools
+from fastmcp import FastMCP
 
 ENV = {
     "AZURE_SQL_ACCESS_TOKEN": "test-token",

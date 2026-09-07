@@ -15,7 +15,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastmcp import FastMCP
-
 from gcu.browser.bridge import BeelineBridge
 from gcu.browser.tools.advanced import register_advanced_tools
 from gcu.browser.tools.inspection import register_inspection_tools

@@ -26,17 +26,14 @@ risk_score(
     dns_results='{"grade_input": {"spf_present": true, ...}}',
     ports_results='{"grade_input": {"no_database_ports_exposed": true, ...}}',
     tech_results='{"grade_input": {"server_version_hidden": false, ...}}',
-    subdomain_results='{"grade_input": {"no_dev_staging_exposed": true, ...}}'
+    subdomain_results='{"grade_input": {"no_dev_staging_exposed": true, ...}}',
 )
 ```
 
 ### Partial Scan (Some Categories Skipped)
 ```python
 # Only SSL and headers scanned
-risk_score(
-    ssl_results='{"grade_input": {...}}',
-    headers_results='{"grade_input": {...}}'
-)
+risk_score(ssl_results='{"grade_input": {...}}', headers_results='{"grade_input": {...}}')
 ```
 
 ## API Reference
@@ -137,13 +134,14 @@ subs = subdomain_enumerate("example.com")
 
 # 2. Calculate risk score
 import json
+
 score = risk_score(
     ssl_results=json.dumps(ssl),
     headers_results=json.dumps(headers),
     dns_results=json.dumps(dns),
     ports_results=json.dumps(ports),
     tech_results=json.dumps(tech),
-    subdomain_results=json.dumps(subs)
+    subdomain_results=json.dumps(subs),
 )
 
 # 3. Review results

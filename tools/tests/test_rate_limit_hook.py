@@ -8,11 +8,11 @@ import types
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
-from framework.rate_limiter import SocialRateLimiter
-
 import gcu.browser.hooks.rate_limit_hook as _hook_mod
+import pytest
 from gcu.browser.hooks.rate_limit_hook import IDENTITY_JS, after_run, before_run
+
+from framework.rate_limiter import SocialRateLimiter
 
 # ── Fixtures ────────────────────────────────────────────────────────
 

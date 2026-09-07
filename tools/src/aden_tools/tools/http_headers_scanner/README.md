@@ -24,10 +24,7 @@ http_headers_scan(url="https://example.com")
 
 ### Without Following Redirects
 ```python
-http_headers_scan(
-    url="https://example.com",
-    follow_redirects=False
-)
+http_headers_scan(url="https://example.com", follow_redirects=False)
 ```
 
 ## API Reference

@@ -4,9 +4,8 @@ from unittest.mock import MagicMock, patch
 
 import httpx
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.notion_tool.notion_tool import register_tools
+from fastmcp import FastMCP
 
 ENV = {"NOTION_API_TOKEN": "test-token"}
 PATCH_BASE = "aden_tools.tools.notion_tool.notion_tool"

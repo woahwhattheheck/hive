@@ -51,28 +51,20 @@ calcom_create_booking(
     name="John Doe",
     email="john@example.com",
     timezone="America/New_York",
-    notes="Discuss Q1 planning"
+    notes="Discuss Q1 planning",
 )
 ```
 
 ### Check Availability
 
 ```python
-calcom_get_availability(
-    event_type_id=123,
-    start_time="2024-01-20T00:00:00Z",
-    end_time="2024-01-27T00:00:00Z",
-    timezone="America/New_York"
-)
+calcom_get_availability(event_type_id=123, start_time="2024-01-20T00:00:00Z", end_time="2024-01-27T00:00:00Z", timezone="America/New_York")
 ```
 
 ### Cancel a Booking
 
 ```python
-calcom_cancel_booking(
-    booking_id=456,
-    reason="Schedule conflict"
-)
+calcom_cancel_booking(booking_id=456, reason="Schedule conflict")
 ```
 
 ## API Reference

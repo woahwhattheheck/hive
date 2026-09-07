@@ -141,10 +141,7 @@ Create a new record. Use field API names (e.g. `First_Name`, `Last_Name`, `Compa
 **Example:**
 
 ```python
-zoho_crm_create_record(
-    module="Leads",
-    data={"First_Name": "Jane", "Last_Name": "Doe", "Company": "Acme Inc", "Email": "jane@acme.com"}
-)
+zoho_crm_create_record(module="Leads", data={"First_Name": "Jane", "Last_Name": "Doe", "Company": "Acme Inc", "Email": "jane@acme.com"})
 ```
 
 ### zoho_crm_update_record
@@ -177,12 +174,7 @@ Add a note to a record. The note appears in the record’s Notes section in Zoho
 **Example:**
 
 ```python
-zoho_crm_add_note(
-    module="Leads",
-    id="1192161000000585006",
-    note_title="Call back",
-    note_content="Customer asked for pricing by Friday."
-)
+zoho_crm_add_note(module="Leads", id="1192161000000585006", note_title="Call back", note_content="Customer asked for pricing by Friday.")
 ```
 
 ## Response Format

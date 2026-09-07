@@ -14,12 +14,11 @@ from unittest.mock import MagicMock, patch
 
 import httpx
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.github_tool.github_tool import (
     _GitHubClient,
     register_tools,
 )
+from fastmcp import FastMCP
 
 # --- _GitHubClient tests ---
 

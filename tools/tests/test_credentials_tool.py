@@ -10,10 +10,10 @@ from __future__ import annotations
 import json
 
 import pytest
+from aden_tools.credentials.store_adapter import CredentialStoreAdapter
+
 from framework.agent_loop.internals import credential_tool as ct
 from framework.orchestrator.prompting import build_credentials_summary
-
-from aden_tools.credentials.store_adapter import CredentialStoreAdapter
 
 # ---------------------------------------------------------------------------
 # Tool definition + help
@@ -222,11 +222,11 @@ def test_adapter_resolves_collected_local_account(monkeypatch):
 def test_strict_mode_counts_local_accounts(monkeypatch):
     """Queen strict-account-mode must surface ambiguity from local accounts too."""
     import pytest as _pytest
+    from aden_tools.credentials.store_adapter import queen_strict_account_mode
+
     from framework.credentials.local.registry import LocalCredentialRegistry
     from framework.credentials.models import AccountSelectionRequiredError
     from framework.credentials.storage import InMemoryStorage
-
-    from aden_tools.credentials.store_adapter import queen_strict_account_mode
 
     # Two local accounts → must force disambiguation, not silently return None.
     multi = LocalCredentialRegistry(InMemoryStorage())

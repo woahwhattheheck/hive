@@ -123,7 +123,7 @@ preview = browser_evaluate("""
     return { hasPreview: !!att };
   })();
 """)
-if not preview['hasPreview']:
+if not preview["hasPreview"]:
     raise Exception("Upload didn't render in composer — do NOT click Post")
 
 # 5. Now click Post as usual

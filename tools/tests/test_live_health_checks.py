@@ -19,7 +19,6 @@ from __future__ import annotations
 import logging
 
 import pytest
-
 from aden_tools.credentials import CREDENTIAL_SPECS
 from aden_tools.credentials.health_check import (
     HEALTH_CHECKERS,

@@ -4,9 +4,8 @@ from unittest.mock import MagicMock, patch
 
 import httpx
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.gmail_tool import register_tools
+from fastmcp import FastMCP
 
 HTTPX_MODULE = "aden_tools.tools.gmail_tool.gmail_tool.httpx.request"
 

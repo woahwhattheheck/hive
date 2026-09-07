@@ -3,9 +3,8 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.mongodb_tool.mongodb_tool import register_tools
+from fastmcp import FastMCP
 
 ENV = {
     "MONGODB_DATA_API_URL": "https://data.mongodb-api.com/app/test/endpoint/data/v1",

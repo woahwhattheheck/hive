@@ -75,11 +75,7 @@ Requires a YouTube Data API v3 key from [Google Cloud Console](https://console.c
 
 ```python
 # Search for videos
-youtube_search_videos(
-    query="Python tutorial",
-    max_results=5,
-    order="viewCount"
-)
+youtube_search_videos(query="Python tutorial", max_results=5, order="viewCount")
 
 # Get video details
 youtube_get_video_details(video_id="dQw4w9WgXcQ")
@@ -88,20 +84,13 @@ youtube_get_video_details(video_id="dQw4w9WgXcQ")
 channels = youtube_search_channels(query="Fireship", max_results=1)
 channel_id = channels["items"][0]["id"]["channelId"]
 
-videos = youtube_list_channel_videos(
-    channel_id=channel_id,
-    max_results=20,
-    order="date"
-)
+videos = youtube_list_channel_videos(channel_id=channel_id, max_results=20, order="date")
 
 # Get channel statistics
 youtube_get_channel_info(channel_id="UCsBjURrPoezykLs9EqgamOA")
 
 # Get playlist videos
-youtube_get_playlist_items(
-    playlist_id="PLrAXtmErZgOeiKm4sgNOknGvNjby9efdf",
-    max_results=25
-)
+youtube_get_playlist_items(playlist_id="PLrAXtmErZgOeiKm4sgNOknGvNjby9efdf", max_results=25)
 ```
 
 ## Response Format

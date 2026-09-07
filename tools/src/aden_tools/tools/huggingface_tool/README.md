@@ -63,16 +63,13 @@ huggingface_whoami()
 huggingface_run_inference(
     model_id="facebook/bart-large-cnn",
     inputs="HuggingFace is a company that builds NLP tools and hosts models...",
-    parameters='{"max_new_tokens": 128}'
+    parameters='{"max_new_tokens": 128}',
 )
 ```
 
 ### Generate embeddings
 ```python
-huggingface_run_embedding(
-    model_id="sentence-transformers/all-MiniLM-L6-v2",
-    inputs="The quick brown fox jumps over the lazy dog"
-)
+huggingface_run_embedding(model_id="sentence-transformers/all-MiniLM-L6-v2", inputs="The quick brown fox jumps over the lazy dog")
 ```
 
 ### List inference endpoints

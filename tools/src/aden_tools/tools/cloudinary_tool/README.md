@@ -53,7 +53,10 @@ cloudinary_delete_resource(public_id="my-photo")
 
 All tools return error dicts on failure:
 ```python
-{"error": "CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET not set", "help": "Get credentials from your Cloudinary dashboard at https://console.cloudinary.com/"}
+{
+    "error": "CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET not set",
+    "help": "Get credentials from your Cloudinary dashboard at https://console.cloudinary.com/",
+}
 {"error": "Cloudinary API error (HTTP 404): Resource not found"}
 {"error": "Request timed out"}
 ```

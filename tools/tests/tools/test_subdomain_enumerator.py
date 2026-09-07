@@ -6,9 +6,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.subdomain_enumerator import register_tools
+from fastmcp import FastMCP
 
 
 @pytest.fixture

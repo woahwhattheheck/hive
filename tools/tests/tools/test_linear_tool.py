@@ -15,7 +15,6 @@ from unittest.mock import MagicMock, patch
 
 import httpx
 import pytest
-
 from aden_tools.tools.linear_tool.linear_tool import (
     LINEAR_API_BASE,
     _LinearClient,

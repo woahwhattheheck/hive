@@ -15,8 +15,6 @@ import importlib
 import inspect
 
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.credentials import (
     ATTIO_CREDENTIALS,
     CREDENTIAL_SPECS,
@@ -27,6 +25,7 @@ from aden_tools.credentials import (
     SLACK_CREDENTIALS,
 )
 from aden_tools.tools import register_all_tools
+from fastmcp import FastMCP
 
 from .conftest import (
     CREDENTIAL_STORE_META_MODULES,

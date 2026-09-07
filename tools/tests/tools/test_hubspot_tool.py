@@ -14,13 +14,12 @@ from unittest.mock import MagicMock, patch
 
 import httpx
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.hubspot_tool.hubspot_tool import (
     HUBSPOT_API_BASE,
     _HubSpotClient,
     register_tools,
 )
+from fastmcp import FastMCP
 
 # ---------------------------------------------------------------------------
 # Fixtures

@@ -3,9 +3,8 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.obsidian_tool.obsidian_tool import register_tools
+from fastmcp import FastMCP
 
 ENV = {
     "OBSIDIAN_REST_API_KEY": "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",

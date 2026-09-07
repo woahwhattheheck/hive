@@ -7,10 +7,9 @@ import json
 from pathlib import Path
 
 import pytest
+from aden_tools.tools.attach_file_tool import register_tools
 from fastmcp import FastMCP
 from mcp.types import ImageContent, TextContent
-
-from aden_tools.tools.attach_file_tool import register_tools
 
 # Smallest valid PDF (one blank page) — matches the upload-path probe fixture.
 TINY_PDF_BYTES = base64.b64decode(

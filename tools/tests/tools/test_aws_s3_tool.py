@@ -3,9 +3,8 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.aws_s3_tool.aws_s3_tool import register_tools
+from fastmcp import FastMCP
 
 ENV = {
     "AWS_ACCESS_KEY_ID": "AKIAIOSFODNN7EXAMPLE",

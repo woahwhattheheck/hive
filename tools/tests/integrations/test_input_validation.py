@@ -11,9 +11,8 @@ import importlib
 import inspect
 
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.credentials import CREDENTIAL_SPECS
+from fastmcp import FastMCP
 
 from .conftest import (
     CREDENTIAL_TOOL_MODULES,

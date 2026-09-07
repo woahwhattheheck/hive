@@ -4,9 +4,8 @@ from types import ModuleType
 from unittest.mock import MagicMock, patch
 
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.yahoo_finance_tool.yahoo_finance_tool import register_tools
+from fastmcp import FastMCP
 
 
 @pytest.fixture

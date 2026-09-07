@@ -25,14 +25,7 @@ uv pip install tools[sql]
 
 ### Read a CSV File
 ```python
-csv_read(
-    path="data/sales.csv",
-    workspace_id="ws_123",
-    agent_id="agent_1",
-    session_id="session_1",
-    limit=100,
-    offset=0
-)
+csv_read(path="data/sales.csv", workspace_id="ws_123", agent_id="agent_1", session_id="session_1", limit=100, offset=0)
 ```
 
 ### Write a New CSV
@@ -43,10 +36,7 @@ csv_write(
     agent_id="agent_1",
     session_id="session_1",
     columns=["name", "email", "score"],
-    rows=[
-        {"name": "Alice", "email": "alice@example.com", "score": 95},
-        {"name": "Bob", "email": "bob@example.com", "score": 87}
-    ]
+    rows=[{"name": "Alice", "email": "alice@example.com", "score": 95}, {"name": "Bob", "email": "bob@example.com", "score": 87}],
 )
 ```
 
@@ -57,20 +47,13 @@ csv_append(
     workspace_id="ws_123",
     agent_id="agent_1",
     session_id="session_1",
-    rows=[
-        {"timestamp": "2024-01-15", "event": "login", "user": "alice"}
-    ]
+    rows=[{"timestamp": "2024-01-15", "event": "login", "user": "alice"}],
 )
 ```
 
 ### Get File Info
 ```python
-csv_info(
-    path="data/large_file.csv",
-    workspace_id="ws_123",
-    agent_id="agent_1",
-    session_id="session_1"
-)
+csv_info(path="data/large_file.csv", workspace_id="ws_123", agent_id="agent_1", session_id="session_1")
 # Returns: columns, row count, file size (without loading all data)
 ```
 
@@ -81,7 +64,7 @@ csv_sql(
     workspace_id="ws_123",
     agent_id="agent_1",
     session_id="session_1",
-    query="SELECT category, SUM(amount) as total FROM data GROUP BY category ORDER BY total DESC"
+    query="SELECT category, SUM(amount) as total FROM data GROUP BY category ORDER BY total DESC",
 )
 ```
 

@@ -4,9 +4,8 @@ import sys
 from unittest.mock import MagicMock, patch
 
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.youtube_transcript_tool.youtube_transcript_tool import register_tools
+from fastmcp import FastMCP
 
 
 @pytest.fixture

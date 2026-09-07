@@ -126,7 +126,10 @@ All tools return error dicts on failure:
 
 ```python
 [
-    {"error": "ZENDESK_SUBDOMAIN, ZENDESK_EMAIL, and ZENDESK_API_TOKEN not set", "help": "Create an API token in Zendesk Admin > Apps and integrations > APIs > Zendesk API"},
+    {
+        "error": "ZENDESK_SUBDOMAIN, ZENDESK_EMAIL, and ZENDESK_API_TOKEN not set",
+        "help": "Create an API token in Zendesk Admin > Apps and integrations > APIs > Zendesk API",
+    },
     {"error": "Unauthorized. Check your Zendesk credentials."},
     {"error": "Forbidden. Check your Zendesk permissions."},
     {"error": "Rate limited. Try again shortly."},

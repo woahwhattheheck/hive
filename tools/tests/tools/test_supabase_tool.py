@@ -3,9 +3,8 @@
 from unittest.mock import patch
 
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.supabase_tool.supabase_tool import register_tools
+from fastmcp import FastMCP
 
 ENV = {"SUPABASE_ANON_KEY": "test-key", "SUPABASE_URL": "https://test.supabase.co"}
 

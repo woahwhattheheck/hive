@@ -3,9 +3,8 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.email_tool import register_tools
+from fastmcp import FastMCP
 
 
 @pytest.fixture

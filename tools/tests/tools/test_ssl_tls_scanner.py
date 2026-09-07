@@ -6,9 +6,8 @@ from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock, patch
 
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.ssl_tls_scanner import register_tools
+from fastmcp import FastMCP
 
 
 @pytest.fixture

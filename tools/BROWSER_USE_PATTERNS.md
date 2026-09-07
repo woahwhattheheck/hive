@@ -10,19 +10,15 @@
 # Three fallback methods for element geometry:
 
 # Method 1: DOM.getContentQuads (best for inline elements and complex layouts)
-content_quads_result = await self._client.send.DOM.getContentQuads(
-    params={'backendNodeId': self._backend_node_id}, session_id=self._session_id
-)
+content_quads_result = await self._client.send.DOM.getContentQuads(params={"backendNodeId": self._backend_node_id}, session_id=self._session_id)
 
 # Method 2: DOM.getBoxModel (fallback)
-box_model = await self._client.send.DOM.getBoxModel(
-    params={'backendNodeId': self._backend_node_id}, session_id=self._session_id
-)
+box_model = await self._client.send.DOM.getBoxModel(params={"backendNodeId": self._backend_node_id}, session_id=self._session_id)
 
 # Method 3: JavaScript getBoundingClientRect (final fallback)
 bounds_result = await self._client.send.Runtime.callFunctionOn(
     params={
-        'functionDeclaration': """
+        "functionDeclaration": """
             function() {
                 const rect = this.getBoundingClientRect();
                 return {
@@ -33,8 +29,8 @@ bounds_result = await self._client.send.Runtime.callFunctionOn(
                 };
             }
         """,
-        'objectId': object_id,
-        'returnByValue': True,
+        "objectId": object_id,
+        "returnByValue": True,
     },
     session_id=self._session_id,
 )
@@ -42,8 +38,8 @@ bounds_result = await self._client.send.Runtime.callFunctionOn(
 # Method 4: JavaScript click (if all else fails)
 await self._client.send.Runtime.callFunctionOn(
     params={
-        'functionDeclaration': 'function() { this.click(); }',
-        'objectId': object_id,
+        "functionDeclaration": "function() { this.click(); }",
+        "objectId": object_id,
     },
     session_id=self._session_id,
 )
@@ -63,23 +59,20 @@ await self._client.send.Runtime.callFunctionOn(
 
 ```python
 # 1. Scroll element into view
-await cdp_client.send.DOM.scrollIntoViewIfNeeded(
-    params={'backendNodeId': backend_node_id}, 
-    session_id=session_id
-)
+await cdp_client.send.DOM.scrollIntoViewIfNeeded(params={"backendNodeId": backend_node_id}, session_id=session_id)
 
 # 2. Get object ID
 result = await cdp_client.send.DOM.resolveNode(
-    params={'backendNodeId': backend_node_id},
+    params={"backendNodeId": backend_node_id},
     session_id=session_id,
 )
-object_id = result['object']['objectId']
+object_id = result["object"]["objectId"]
 
 # 3. Focus via JavaScript (more reliable than CDP focus)
 await cdp_client.send.Runtime.callFunctionOn(
     params={
-        'functionDeclaration': 'function() { this.focus(); }',
-        'objectId': object_id,
+        "functionDeclaration": "function() { this.focus(); }",
+        "objectId": object_id,
     },
     session_id=session_id,
 )
@@ -88,9 +81,9 @@ await cdp_client.send.Runtime.callFunctionOn(
 for char in text:
     await self._client.send.Input.dispatchKeyEvent(
         params={
-            'type': 'keyDown',
-            'key': char,
-            'text': char,
+            "type": "keyDown",
+            "key": char,
+            "text": char,
         },
         session_id=self._session_id,
     )

@@ -68,10 +68,7 @@ youtube_list_transcripts(video_id="dQw4w9WgXcQ")
     "language_code": "en",
     "is_generated": True,
     "snippet_count": 312,
-    "snippets": [
-        {"text": "Never gonna give you up", "start": 18.44, "duration": 1.72},
-        ...
-    ]
+    "snippets": [{"text": "Never gonna give you up", "start": 18.44, "duration": 1.72}, ...],
 }
 ```
 
@@ -84,7 +81,7 @@ youtube_list_transcripts(video_id="dQw4w9WgXcQ")
     "transcripts": [
         {"language": "English", "language_code": "en", "is_generated": True, "is_translatable": True},
         {"language": "German", "language_code": "de", "is_generated": False, "is_translatable": True},
-    ]
+    ],
 }
 ```
 

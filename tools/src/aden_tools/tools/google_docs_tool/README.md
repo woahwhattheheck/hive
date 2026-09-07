@@ -63,11 +63,7 @@ result = google_docs_create_document(title="My New Document")
 
 ```python
 # Use placeholders in your template like {{Customer_Name}}, {{Date}}, etc.
-result = google_docs_replace_all_text(
-    document_id="1abc...",
-    find_text="{{Customer_Name}}",
-    replace_text="John Doe"
-)
+result = google_docs_replace_all_text(document_id="1abc...", find_text="{{Customer_Name}}", replace_text="John Doe")
 # Returns: {"occurrences_replaced": 3}
 ```
 
@@ -75,17 +71,10 @@ result = google_docs_replace_all_text(
 
 ```python
 # Insert at the end
-result = google_docs_insert_text(
-    document_id="1abc...",
-    text="Hello, World!\n"
-)
+result = google_docs_insert_text(document_id="1abc...", text="Hello, World!\n")
 
 # Insert at specific position (1-based index)
-result = google_docs_insert_text(
-    document_id="1abc...",
-    text="Inserted text",
-    index=10
-)
+result = google_docs_insert_text(document_id="1abc...", text="Inserted text", index=10)
 ```
 
 ### Format Text
@@ -99,17 +88,14 @@ result = google_docs_format_text(
     font_size_pt=18.0,
     foreground_color_red=0.0,
     foreground_color_green=0.0,
-    foreground_color_blue=1.0  # Blue text
+    foreground_color_blue=1.0,  # Blue text
 )
 ```
 
 ### Export to PDF
 
 ```python
-result = google_docs_export_content(
-    document_id="1abc...",
-    format="pdf"
-)
+result = google_docs_export_content(document_id="1abc...", format="pdf")
 # Returns: {"content_base64": "...", "size_bytes": 12345, "mime_type": "application/pdf"}
 ```
 

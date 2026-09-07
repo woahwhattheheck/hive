@@ -116,12 +116,7 @@ import logging
 logger = logging.getLogger("my_module")
 
 # Add custom fields
-logger.info("LLM call completed", extra={
-    "latency_ms": 1250,
-    "tokens_used": 450,
-    "model": "claude-3-5-sonnet-20241022",
-    "node_id": "web-search"
-})
+logger.info("LLM call completed", extra={"latency_ms": 1250, "tokens_used": 450, "model": "claude-3-5-sonnet-20241022", "node_id": "web-search"})
 ```
 
 These fields appear in both JSON and human-readable formats.
@@ -137,10 +132,11 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 def my_function():
     # This log automatically includes trace_id, execution_id, etc.
     logger.info("Processing data")
-    
+
     try:
         result = do_work()
         logger.info("Work completed", extra={"result_count": len(result)})
@@ -168,11 +164,7 @@ If you need to set trace context manually (rare):
 from framework.observability import set_trace_context, get_trace_context
 
 # Set context (32-hex, no prefixes)
-set_trace_context(
-    trace_id="54e80d7b5bd6409dbc3217e5cd16a4fd",
-    execution_id="b4c348ec54e80d7b5bd6409dbc3217e50",
-    agent_id="my-agent"
-)
+set_trace_context(trace_id="54e80d7b5bd6409dbc3217e5cd16a4fd", execution_id="b4c348ec54e80d7b5bd6409dbc3217e50", agent_id="my-agent")
 
 # Get current context
 context = get_trace_context()
@@ -180,6 +172,7 @@ print(context["execution_id"])
 
 # Clear context (usually not needed)
 from framework.observability import clear_trace_context
+
 clear_trace_context()
 ```
 
@@ -190,6 +183,7 @@ For tests, you may want to configure logging explicitly:
 ```python
 import pytest
 from framework.observability import configure_logging
+
 
 @pytest.fixture(autouse=True)
 def setup_logging():

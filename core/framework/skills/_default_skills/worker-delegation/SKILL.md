@@ -111,17 +111,18 @@ Pick ONE decomposition axis per playbook.
 Workers bound to the same external account must not hammer it in parallel. Two levers, both keyed off the row index:
 
 ```python
-ACCOUNTS = ["li-work-1", "li-work-2", "li-work-3"]   # worker profiles, one per account
+ACCOUNTS = ["li-work-1", "li-work-2", "li-work-3"]  # worker profiles, one per account
 for a in ACCOUNTS:
-    lane(a, concurrency=3, rate_per_min=20)          # throttle each account
+    lane(a, concurrency=3, rate_per_min=20)  # throttle each account
 
 # in dispatch: rotate the account by rotating the PROFILE (a profile *is* the
 # account binding), and put each on its own lane:
-dispatch=lambda row, i: worker(
+dispatch = lambda row, i: worker(
     task=...,
-    profile=ACCOUNTS[i % len(ACCOUNTS)],   # spread load across accounts
-    lane=ACCOUNTS[i % len(ACCOUNTS)],       # cap concurrency per account
-    skill="...")
+    profile=ACCOUNTS[i % len(ACCOUNTS)],  # spread load across accounts
+    lane=ACCOUNTS[i % len(ACCOUNTS)],  # cap concurrency per account
+    skill="...",
+)
 ```
 
 `profile` selects which account a worker uses — to spread across accounts, rotate `profile`, not a separate `account` arg (there isn't one). `meta["concurrency"]` sets the run-level total in flight; `lane` caps how many run at once **per account** within that. Use both: rotate to spread, lane to throttle. Without them you risk bans.

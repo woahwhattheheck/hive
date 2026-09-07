@@ -6,8 +6,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.tech_stack_detector import register_tools
 from aden_tools.tools.tech_stack_detector.tech_stack_detector import (
     _detect_cdn,
@@ -15,6 +13,7 @@ from aden_tools.tools.tech_stack_detector.tech_stack_detector import (
     _detect_js_libraries,
     _detect_server,
 )
+from fastmcp import FastMCP
 
 
 @pytest.fixture

@@ -3,9 +3,8 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.powerbi_tool.powerbi_tool import register_tools
+from fastmcp import FastMCP
 
 ENV = {"POWERBI_ACCESS_TOKEN": "test-token"}
 

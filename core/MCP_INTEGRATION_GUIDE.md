@@ -22,13 +22,7 @@ from framework.runner.runner import AgentRunner
 runner = AgentRunner.load("exports/my-agent")
 
 # Register tools MCP server
-runner.register_mcp_server(
-    name="tools",
-    transport="stdio",
-    command="python",
-    args=["-m", "aden_tools.mcp_server", "--stdio"],
-    cwd="/path/to/tools"
-)
+runner.register_mcp_server(name="tools", transport="stdio", command="python", args=["-m", "aden_tools.mcp_server", "--stdio"], cwd="/path/to/tools")
 
 # Tools are now available to your agent
 result = await runner.run({"input": "data"})
@@ -71,9 +65,7 @@ runner.register_mcp_server(
     command="python",
     args=["-m", "my_tools.server", "--stdio"],
     cwd="/path/to/my-tools",
-    env={
-        "API_KEY": "your-key-here"
-    }
+    env={"API_KEY": "your-key-here"},
 )
 ```
 
@@ -89,14 +81,7 @@ runner.register_mcp_server(
 Best for remote MCP servers or containerized deployments:
 
 ```python
-runner.register_mcp_server(
-    name="remote-tools",
-    transport="http",
-    url="http://localhost:4001",
-    headers={
-        "Authorization": "Bearer token"
-    }
-)
+runner.register_mcp_server(name="remote-tools", transport="http", url="http://localhost:4001", headers={"Authorization": "Bearer token"})
 ```
 
 **Configuration:**
@@ -110,13 +95,7 @@ Best for same-host inter-process communication with lower overhead than TCP:
 
 ```python
 runner.register_mcp_server(
-    name="local-ipc-tools",
-    transport="unix",
-    url="http://localhost",
-    socket_path="/tmp/mcp_server.sock",
-    headers={
-        "Authorization": "Bearer token"
-    }
+    name="local-ipc-tools", transport="unix", url="http://localhost", socket_path="/tmp/mcp_server.sock", headers={"Authorization": "Bearer token"}
 )
 ```
 
@@ -131,14 +110,7 @@ runner.register_mcp_server(
 Best for real-time, event-driven connections using the MCP SDK's SSE client:
 
 ```python
-runner.register_mcp_server(
-    name="streaming-tools",
-    transport="sse",
-    url="http://localhost:8000/sse",
-    headers={
-        "Authorization": "Bearer token"
-    }
-)
+runner.register_mcp_server(name="streaming-tools", transport="sse", url="http://localhost:8000/sse", headers={"Authorization": "Bearer token"})
 ```
 
 **Configuration:**
@@ -165,7 +137,7 @@ builder.add_node(
     system_prompt="Research the topic using web_search",
     tools=["web_search"],  # Tool from tools MCP server
     input_keys=["topic"],
-    output_keys=["findings"]
+    output_keys=["findings"],
 )
 ```
 
@@ -212,9 +184,7 @@ runner.register_mcp_server(
     command="python",
     args=["-m", "aden_tools.mcp_server", "--stdio"],
     cwd="../tools",
-    env={
-        "BRAVE_SEARCH_API_KEY": os.environ["BRAVE_SEARCH_API_KEY"]
-    }
+    env={"BRAVE_SEARCH_API_KEY": os.environ["BRAVE_SEARCH_API_KEY"]},
 )
 ```
 
@@ -276,12 +246,7 @@ All tools from all servers will be available to your agent.
 STDIO transport is easier to debug and doesn't require managing server processes:
 
 ```python
-runner.register_mcp_server(
-    name="dev-tools",
-    transport="stdio",
-    command="python",
-    args=["-m", "my_tools.server", "--stdio"]
-)
+runner.register_mcp_server(name="dev-tools", transport="stdio", command="python", args=["-m", "my_tools.server", "--stdio"])
 ```
 
 ### 2. Use HTTP for Production
@@ -293,11 +258,7 @@ HTTP transport is better for:
 - Remote tool execution
 
 ```python
-runner.register_mcp_server(
-    name="prod-tools",
-    transport="http",
-    url="http://tools-service:8000"
-)
+runner.register_mcp_server(name="prod-tools", transport="http", url="http://tools-service:8000")
 ```
 
 ### 3. Use Unix Socket for Same-Host IPC
@@ -305,12 +266,7 @@ runner.register_mcp_server(
 When both the agent and MCP server run on the same machine, Unix sockets avoid TCP overhead:
 
 ```python
-runner.register_mcp_server(
-    name="fast-local-tools",
-    transport="unix",
-    url="http://localhost",
-    socket_path="/tmp/mcp_server.sock"
-)
+runner.register_mcp_server(name="fast-local-tools", transport="unix", url="http://localhost", socket_path="/tmp/mcp_server.sock")
 ```
 
 ### 4. Use SSE for Streaming and Real-Time Tools
@@ -318,11 +274,7 @@ runner.register_mcp_server(
 SSE transport maintains a persistent connection, ideal for event-driven servers:
 
 ```python
-runner.register_mcp_server(
-    name="realtime-tools",
-    transport="sse",
-    url="http://realtime-server:8000/sse"
-)
+runner.register_mcp_server(name="realtime-tools", transport="sse", url="http://realtime-server:8000/sse")
 ```
 
 ### 5. Handle Cleanup
@@ -409,6 +361,7 @@ import asyncio
 from pathlib import Path
 from framework.runner.runner import AgentRunner
 
+
 async def main():
     # Create agent path
     agent_path = Path("exports/web-research-agent")
@@ -423,20 +376,17 @@ async def main():
         command="python",
         args=["-m", "aden_tools.mcp_server", "--stdio"],
         cwd="../tools",
-        env={
-            "BRAVE_SEARCH_API_KEY": "your-api-key"
-        }
+        env={"BRAVE_SEARCH_API_KEY": "your-api-key"},
     )
 
     # Run agent
-    result = await runner.run({
-        "query": "latest developments in quantum computing"
-    })
+    result = await runner.run({"query": "latest developments in quantum computing"})
 
     print(f"Research complete: {result}")
 
     # Cleanup
     runner.cleanup()
+
 
 if __name__ == "__main__":
     asyncio.run(main())

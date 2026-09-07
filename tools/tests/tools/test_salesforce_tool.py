@@ -3,9 +3,8 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.salesforce_tool.salesforce_tool import register_tools
+from fastmcp import FastMCP
 
 ENV = {
     "SALESFORCE_ACCESS_TOKEN": "00Dxx0000000000!test_token",

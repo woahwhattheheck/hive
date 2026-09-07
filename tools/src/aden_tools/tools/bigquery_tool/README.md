@@ -53,10 +53,7 @@ export BIGQUERY_PROJECT_ID="your-project-id"
 ### Run a Query
 
 ```python
-result = run_bigquery_query(
-    sql="SELECT name, COUNT(*) as count FROM `project.dataset.table` GROUP BY name",
-    max_rows=100
-)
+result = run_bigquery_query(sql="SELECT name, COUNT(*) as count FROM `project.dataset.table` GROUP BY name", max_rows=100)
 
 if result.get("success"):
     for row in result["rows"]:
@@ -71,7 +68,7 @@ else:
 ```python
 result = describe_dataset(
     dataset_id="my_dataset",
-    project_id="my-project"  # optional if BIGQUERY_PROJECT_ID is set
+    project_id="my-project",  # optional if BIGQUERY_PROJECT_ID is set
 )
 
 if result.get("success"):
@@ -127,19 +124,16 @@ The tool returns structured error responses with helpful messages:
 # Authentication error
 {
     "error": "BigQuery authentication failed",
-    "help": "Set GOOGLE_APPLICATION_CREDENTIALS to your service account JSON path, or run 'gcloud auth application-default login' for local development."
+    "help": "Set GOOGLE_APPLICATION_CREDENTIALS to your service account JSON path, or run 'gcloud auth application-default login' for local development.",
 }
 
 # Permission error
-{
-    "error": "BigQuery permission denied: ...",
-    "help": "Ensure your service account has the 'BigQuery Data Viewer' and 'BigQuery Job User' roles."
-}
+{"error": "BigQuery permission denied: ...", "help": "Ensure your service account has the 'BigQuery Data Viewer' and 'BigQuery Job User' roles."}
 
 # Write operation blocked
 {
     "error": "Write operations are not allowed",
-    "help": "Only SELECT queries are permitted. INSERT, UPDATE, DELETE, DROP, CREATE, ALTER, TRUNCATE, and MERGE are blocked."
+    "help": "Only SELECT queries are permitted. INSERT, UPDATE, DELETE, DROP, CREATE, ALTER, TRUNCATE, and MERGE are blocked.",
 }
 ```
 

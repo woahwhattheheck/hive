@@ -3,9 +3,8 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.jira_tool.jira_tool import register_tools
+from fastmcp import FastMCP
 
 ENV = {
     "JIRA_DOMAIN": "test.atlassian.net",

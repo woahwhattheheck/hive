@@ -3,9 +3,8 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.langfuse_tool.langfuse_tool import register_tools
+from fastmcp import FastMCP
 
 ENV = {
     "LANGFUSE_PUBLIC_KEY": "pk-lf-test-key",

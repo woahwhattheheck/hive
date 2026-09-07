@@ -3,9 +3,8 @@
 from unittest.mock import patch
 
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.pipedrive_tool.pipedrive_tool import register_tools
+from fastmcp import FastMCP
 
 ENV = {"PIPEDRIVE_API_TOKEN": "test-token"}
 

@@ -37,19 +37,11 @@ Run an Apify Actor to scrape or automate websites.
 
 ```python
 # Synchronous execution (recommended)
-result = apify_run_actor(
-    actor_id="apify/instagram-profile-scraper",
-    input={"usernames": ["instagram", "google"]},
-    wait=True
-)
+result = apify_run_actor(actor_id="apify/instagram-profile-scraper", input={"usernames": ["instagram", "google"]}, wait=True)
 # Returns: {"items": [...], "run_id": "...", "status": "SUCCEEDED"}
 
 # Asynchronous execution
-result = apify_run_actor(
-    actor_id="apify/web-scraper",
-    input={"startUrls": [{"url": "https://example.com"}]},
-    wait=False
-)
+result = apify_run_actor(actor_id="apify/web-scraper", input={"startUrls": [{"url": "https://example.com"}]}, wait=False)
 # Returns: {"run_id": "abc123", "status": "RUNNING"}
 ```
 
@@ -105,11 +97,7 @@ actors = apify_search_actors(query="instagram", limit=5)
 
 ```python
 # Find email addresses of decision-makers on LinkedIn
-result = apify_run_actor(
-    actor_id="apify/linkedin-profile-scraper",
-    input={"search": "CEO at tech company in SF"},
-    wait=True
-)
+result = apify_run_actor(actor_id="apify/linkedin-profile-scraper", input={"search": "CEO at tech company in SF"}, wait=True)
 emails = [p["email"] for p in result["items"] if p.get("email")]
 ```
 
@@ -117,11 +105,7 @@ emails = [p["email"] for p in result["items"] if p.get("email")]
 
 ```python
 # Monitor product prices across multiple platforms
-result = apify_run_actor(
-    actor_id="apify/amazon-scraper",
-    input={"search": "wireless headphones", "maxItems": 50},
-    wait=True
-)
+result = apify_run_actor(actor_id="apify/amazon-scraper", input={"search": "wireless headphones", "maxItems": 50}, wait=True)
 prices = [item["price"] for item in result["items"]]
 avg_price = sum(prices) / len(prices)
 ```
@@ -130,11 +114,7 @@ avg_price = sum(prices) / len(prices)
 
 ```python
 # Analyze YouTube video comments for sentiment
-result = apify_run_actor(
-    actor_id="apify/youtube-scraper",
-    input={"videoUrls": ["https://youtube.com/watch?v=..."]},
-    wait=True
-)
+result = apify_run_actor(actor_id="apify/youtube-scraper", input={"videoUrls": ["https://youtube.com/watch?v=..."]}, wait=True)
 comments = result["items"][0]["comments"]
 ```
 

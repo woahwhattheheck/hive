@@ -7,9 +7,8 @@ from unittest.mock import patch
 
 import httpx
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.vision_tool import register_tools
+from fastmcp import FastMCP
 
 
 @pytest.fixture

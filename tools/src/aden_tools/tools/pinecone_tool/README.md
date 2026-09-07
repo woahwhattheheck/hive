@@ -35,13 +35,7 @@ pinecone_list_indexes()
 
 ### Create a new index
 ```python
-pinecone_create_index(
-    name="my-index",
-    dimension=1536,
-    metric="cosine",
-    cloud="aws",
-    region="us-east-1"
-)
+pinecone_create_index(name="my-index", dimension=1536, metric="cosine", cloud="aws", region="us-east-1")
 ```
 
 ### Describe an index
@@ -57,44 +51,29 @@ pinecone_upsert_vectors(
         {"id": "vec1", "values": [0.1, 0.2, 0.3], "metadata": {"source": "doc1"}},
         {"id": "vec2", "values": [0.4, 0.5, 0.6], "metadata": {"source": "doc2"}},
     ],
-    namespace="my-namespace"
+    namespace="my-namespace",
 )
 ```
 
 ### Query for similar vectors
 ```python
 pinecone_query_vectors(
-    index_host="https://my-index-abc123.svc.pinecone.io",
-    vector=[0.1, 0.2, 0.3],
-    top_k=5,
-    filter={"source": {"$eq": "doc1"}},
-    include_metadata=True
+    index_host="https://my-index-abc123.svc.pinecone.io", vector=[0.1, 0.2, 0.3], top_k=5, filter={"source": {"$eq": "doc1"}}, include_metadata=True
 )
 ```
 
 ### Fetch vectors by ID
 ```python
-pinecone_fetch_vectors(
-    index_host="https://my-index-abc123.svc.pinecone.io",
-    ids=["vec1", "vec2"],
-    namespace="my-namespace"
-)
+pinecone_fetch_vectors(index_host="https://my-index-abc123.svc.pinecone.io", ids=["vec1", "vec2"], namespace="my-namespace")
 ```
 
 ### Delete vectors
 ```python
 # By ID
-pinecone_delete_vectors(
-    index_host="https://my-index-abc123.svc.pinecone.io",
-    ids=["vec1", "vec2"]
-)
+pinecone_delete_vectors(index_host="https://my-index-abc123.svc.pinecone.io", ids=["vec1", "vec2"])
 
 # All vectors in a namespace
-pinecone_delete_vectors(
-    index_host="https://my-index-abc123.svc.pinecone.io",
-    namespace="my-namespace",
-    delete_all=True
-)
+pinecone_delete_vectors(index_host="https://my-index-abc123.svc.pinecone.io", namespace="my-namespace", delete_all=True)
 ```
 
 ### Get index stats

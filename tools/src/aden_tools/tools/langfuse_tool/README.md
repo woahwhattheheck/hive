@@ -51,11 +51,7 @@ langfuse_list_scores(trace_id="trace_abc123")
 ### Create a score
 ```python
 langfuse_create_score(
-    trace_id="trace_abc123",
-    name="correctness",
-    value=0.95,
-    data_type="NUMERIC",
-    comment="Output matches expected format perfectly"
+    trace_id="trace_abc123", name="correctness", value=0.95, data_type="NUMERIC", comment="Output matches expected format perfectly"
 )
 ```
 
@@ -66,10 +62,7 @@ langfuse_list_prompts(label="production")
 
 ### Get a specific prompt version
 ```python
-langfuse_get_prompt(
-    prompt_name="customer-support-agent",
-    label="production"
-)
+langfuse_get_prompt(prompt_name="customer-support-agent", label="production")
 ```
 
 ## Score Data Types
@@ -93,7 +86,10 @@ langfuse_get_prompt(
 All tools return error dicts on failure:
 
 ```python
-{"error": "Langfuse credentials not configured", "help": "Set LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY environment variables or configure via credential store"}
+{
+    "error": "Langfuse credentials not configured",
+    "help": "Set LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY environment variables or configure via credential store",
+}
 {"error": "Invalid Langfuse API keys"}
 {"error": "Insufficient permissions for this Langfuse resource"}
 {"error": "Langfuse resource not found"}

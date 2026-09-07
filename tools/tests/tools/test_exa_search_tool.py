@@ -1,9 +1,8 @@
 """Tests for exa_search tools (FastMCP)."""
 
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.exa_search_tool import register_tools
+from fastmcp import FastMCP
 
 
 @pytest.fixture

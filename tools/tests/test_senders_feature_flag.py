@@ -15,9 +15,8 @@ default to on.
 from __future__ import annotations
 
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools import register_all_tools
+from fastmcp import FastMCP
 
 # The nine tools that make up the suite (aden_tools.tools.senders_tool).
 SENDER_TOOLS = frozenset(

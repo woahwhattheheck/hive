@@ -1,7 +1,6 @@
 """Unit tests for the hashline utility module."""
 
 import pytest
-
 from aden_tools.hashline import (
     compute_line_hash,
     format_hashlines,

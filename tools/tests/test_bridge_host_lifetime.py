@@ -10,9 +10,8 @@ from __future__ import annotations
 
 import asyncio
 
-import pytest
-
 import gcu.bridge_host as bh
+import pytest
 
 
 @pytest.mark.asyncio

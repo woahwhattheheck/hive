@@ -6,9 +6,8 @@ from unittest.mock import MagicMock, patch
 
 import httpx
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.similarweb_tool.similarweb_tool import register_tools
+from fastmcp import FastMCP
 
 
 class MockCredentials:

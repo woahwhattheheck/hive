@@ -15,9 +15,8 @@ from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock
 
-import pytest
-
 import gcu.browser.tools.lifecycle as lc
+import pytest
 from gcu.browser.bridge import HIVE_GROUP_MARKER, BeelineBridge, _Connection
 
 

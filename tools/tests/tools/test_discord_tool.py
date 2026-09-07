@@ -18,7 +18,6 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from aden_tools.tools.discord_tool.discord_tool import (
     MAX_MESSAGE_LENGTH,
     MAX_RETRIES,

@@ -55,10 +55,7 @@ This tool supports two authentication methods:
 
 ```python
 # Get values from a range
-result = google_sheets_get_values(
-    spreadsheet_id="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms",
-    range_name="Sheet1!A1:D10"
-)
+result = google_sheets_get_values(spreadsheet_id="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms", range_name="Sheet1!A1:D10")
 # Returns: {"range": "Sheet1!A1:D10", "values": [["A1", "B1", ...], ...]}
 ```
 
@@ -69,10 +66,7 @@ result = google_sheets_get_values(
 result = google_sheets_update_values(
     spreadsheet_id="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms",
     range_name="Sheet1!A1:B2",
-    values=[
-        ["Name", "Email"],
-        ["John Doe", "john@example.com"]
-    ]
+    values=[["Name", "Email"], ["John Doe", "john@example.com"]],
 )
 ```
 
@@ -83,10 +77,7 @@ result = google_sheets_update_values(
 result = google_sheets_append_values(
     spreadsheet_id="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms",
     range_name="Sheet1!A1",
-    values=[
-        ["Jane Smith", "jane@example.com"],
-        ["Bob Johnson", "bob@example.com"]
-    ]
+    values=[["Jane Smith", "jane@example.com"], ["Bob Johnson", "bob@example.com"]],
 )
 ```
 
@@ -94,10 +85,7 @@ result = google_sheets_append_values(
 
 ```python
 # Create spreadsheet with multiple sheets
-result = google_sheets_create_spreadsheet(
-    title="My New Spreadsheet",
-    sheet_titles=["Data", "Analysis", "Summary"]
-)
+result = google_sheets_create_spreadsheet(title="My New Spreadsheet", sheet_titles=["Data", "Analysis", "Summary"])
 # Returns: {"spreadsheetId": "...", "spreadsheetUrl": "..."}
 ```
 
@@ -109,8 +97,8 @@ result = google_sheets_batch_update_values(
     spreadsheet_id="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms",
     data=[
         {"range": "Sheet1!A1:B1", "values": [["Header 1", "Header 2"]]},
-        {"range": "Sheet1!A2:B3", "values": [["Data 1", "Data 2"], ["Data 3", "Data 4"]]}
-    ]
+        {"range": "Sheet1!A2:B3", "values": [["Data 1", "Data 2"], ["Data 3", "Data 4"]]},
+    ],
 )
 ```
 
@@ -118,18 +106,10 @@ result = google_sheets_batch_update_values(
 
 ```python
 # Add a new sheet
-result = google_sheets_add_sheet(
-    spreadsheet_id="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms",
-    title="New Sheet",
-    row_count=1000,
-    column_count=26
-)
+result = google_sheets_add_sheet(spreadsheet_id="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms", title="New Sheet", row_count=1000, column_count=26)
 
 # Delete a sheet (need sheet_id from metadata)
-result = google_sheets_delete_sheet(
-    spreadsheet_id="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms",
-    sheet_id=123456
-)
+result = google_sheets_delete_sheet(spreadsheet_id="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms", sheet_id=123456)
 ```
 
 ## A1 Notation
@@ -164,7 +144,7 @@ All tools return error information in the response:
 ```python
 {
     "error": "Error message",
-    "help": "Suggestion for fixing the error"  # When applicable
+    "help": "Suggestion for fixing the error",  # When applicable
 }
 ```
 

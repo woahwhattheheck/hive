@@ -39,10 +39,7 @@ export GOOGLE_CLOUD_VISION_API_KEY=your_api_key
 ### Label Detection
 
 ```python
-result = vision_detect_labels(
-    image_source="https://example.com/photo.jpg",
-    max_labels=5
-)
+result = vision_detect_labels(image_source="https://example.com/photo.jpg", max_labels=5)
 # {"labels": [{"description": "Dog", "score": 0.97}, ...]}
 ```
 

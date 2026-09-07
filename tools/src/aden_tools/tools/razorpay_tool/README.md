@@ -91,7 +91,7 @@ razorpay_create_payment_link(
     amount=50000,  # Rs. 500.00
     currency="INR",
     description="Payment for order #123",
-    customer_email="customer@example.com"
+    customer_email="customer@example.com",
 )
 ```
 
@@ -139,7 +139,7 @@ razorpay_create_refund(payment_id="pay_AbcDefGhijkLmn")
 razorpay_create_refund(
     payment_id="pay_AbcDefGhijkLmn",
     amount=10000,  # Rs. 100.00
-    notes={"reason": "Customer request"}
+    notes={"reason": "Customer request"},
 )
 ```
 

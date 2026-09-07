@@ -3,9 +3,8 @@
 from unittest.mock import patch
 
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.microsoft_graph_tool.microsoft_graph_tool import register_tools
+from fastmcp import FastMCP
 
 
 @pytest.fixture

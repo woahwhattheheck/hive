@@ -42,49 +42,29 @@ For groups: Add the bot to the group, then check getUpdates.
 ### Send a Message
 
 ```python
-telegram_send_message(
-    chat_id="123456789",
-    text="Hello from Hive! 🚀",
-    parse_mode="HTML"
-)
+telegram_send_message(chat_id="123456789", text="Hello from Hive! 🚀", parse_mode="HTML")
 ```
 
 ### Send with Formatting
 
 ```python
 # HTML formatting
-telegram_send_message(
-    chat_id="123456789",
-    text="<b>Alert:</b> Task completed successfully!",
-    parse_mode="HTML"
-)
+telegram_send_message(chat_id="123456789", text="<b>Alert:</b> Task completed successfully!", parse_mode="HTML")
 
 # Markdown formatting
-telegram_send_message(
-    chat_id="123456789",
-    text="*Bold* and _italic_ text",
-    parse_mode="Markdown"
-)
+telegram_send_message(chat_id="123456789", text="*Bold* and _italic_ text", parse_mode="Markdown")
 ```
 
 ### Send a Document
 
 ```python
-telegram_send_document(
-    chat_id="123456789",
-    document="https://example.com/report.pdf",
-    caption="Weekly Report"
-)
+telegram_send_document(chat_id="123456789", document="https://example.com/report.pdf", caption="Weekly Report")
 ```
 
 ### Silent Notification
 
 ```python
-telegram_send_message(
-    chat_id="123456789",
-    text="Background update completed",
-    disable_notification=True
-)
+telegram_send_message(chat_id="123456789", text="Background update completed", disable_notification=True)
 ```
 
 ## API Reference

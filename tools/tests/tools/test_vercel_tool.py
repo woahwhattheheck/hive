@@ -3,9 +3,8 @@
 from unittest.mock import patch
 
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.vercel_tool.vercel_tool import register_tools
+from fastmcp import FastMCP
 
 ENV = {"VERCEL_TOKEN": "test-token"}
 

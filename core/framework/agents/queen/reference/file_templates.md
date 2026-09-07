@@ -155,20 +155,34 @@ nodes = [process_node, handoff_node]
 
 # Edge definitions
 edges = [
-    EdgeSpec(id="process-to-handoff", source="process", target="handoff",
-             condition=EdgeCondition.ON_SUCCESS, priority=1),
+    EdgeSpec(id="process-to-handoff", source="process", target="handoff", condition=EdgeCondition.ON_SUCCESS, priority=1),
     # Feedback loop — revise results
-    EdgeSpec(id="handoff-to-process", source="handoff", target="process",
-             condition=EdgeCondition.CONDITIONAL,
-             condition_expr="str(next_action).lower() == 'revise'", priority=2),
+    EdgeSpec(
+        id="handoff-to-process",
+        source="handoff",
+        target="process",
+        condition=EdgeCondition.CONDITIONAL,
+        condition_expr="str(next_action).lower() == 'revise'",
+        priority=2,
+    ),
     # Escalation loop — queen injects guidance and worker retries
-    EdgeSpec(id="handoff-escalated", source="handoff", target="process",
-             condition=EdgeCondition.CONDITIONAL,
-             condition_expr="str(next_action).lower() == 'escalated'", priority=3),
+    EdgeSpec(
+        id="handoff-escalated",
+        source="handoff",
+        target="process",
+        condition=EdgeCondition.CONDITIONAL,
+        condition_expr="str(next_action).lower() == 'escalated'",
+        priority=3,
+    ),
     # Loop back for next task after queen decision
-    EdgeSpec(id="handoff-done", source="handoff", target="process",
-             condition=EdgeCondition.CONDITIONAL,
-             condition_expr="str(next_action).lower() == 'done'", priority=1),
+    EdgeSpec(
+        id="handoff-done",
+        source="handoff",
+        target="process",
+        condition=EdgeCondition.CONDITIONAL,
+        condition_expr="str(next_action).lower() == 'done'",
+        priority=1,
+    ),
 ]
 
 # Graph configuration — entry is the autonomous process node
@@ -229,12 +243,14 @@ class MyAgent:
         tool_executor = self._tool_registry.get_executor()
         self._graph = self._build_graph()
         self._agent_runtime = AgentHost(
-            graph=self._graph, goal=self.goal, storage_path=self._storage_path,
-            entry_points=[EntryPointSpec(id="default", name="Default", entry_node=self.entry_node,
-                                         trigger_type="manual", isolation_level="shared")],
-            llm=llm, tools=tools, tool_executor=tool_executor,
-            checkpoint_config=CheckpointConfig(enabled=True, checkpoint_on_node_complete=True,
-                                                checkpoint_max_age_days=7, async_checkpoint=True),
+            graph=self._graph,
+            goal=self.goal,
+            storage_path=self._storage_path,
+            entry_points=[EntryPointSpec(id="default", name="Default", entry_node=self.entry_node, trigger_type="manual", isolation_level="shared")],
+            llm=llm,
+            tools=tools,
+            tool_executor=tool_executor,
+            checkpoint_config=CheckpointConfig(enabled=True, checkpoint_on_node_complete=True, checkpoint_max_age_days=7, async_checkpoint=True),
         )
 
     async def start(self):
@@ -251,8 +267,7 @@ class MyAgent:
     async def trigger_and_wait(self, entry_point="default", input_data=None, timeout=None, session_state=None):
         if self._agent_runtime is None:
             raise RuntimeError("Agent not started. Call start() first.")
-        return await self._agent_runtime.trigger_and_wait(
-            entry_point_id=entry_point, input_data=input_data or {}, session_state=session_state)
+        return await self._agent_runtime.trigger_and_wait(entry_point_id=entry_point, input_data=input_data or {}, session_state=session_state)
 
     async def run(self, context, session_state=None):
         await self.start()
@@ -264,10 +279,14 @@ class MyAgent:
 
     def info(self):
         return {
-            "name": metadata.name, "version": metadata.version, "description": metadata.description,
+            "name": metadata.name,
+            "version": metadata.version,
+            "description": metadata.description,
             "goal": {"name": self.goal.name, "description": self.goal.description},
-            "nodes": [n.id for n in self.nodes], "edges": [e.id for e in self.edges],
-            "entry_node": self.entry_node, "entry_points": self.entry_points,
+            "nodes": [n.id for n in self.nodes],
+            "edges": [e.id for e in self.edges],
+            "entry_node": self.entry_node,
+            "entry_points": self.entry_points,
             "terminal_nodes": self.terminal_nodes,
             "client_facing_nodes": [n.id for n in self.nodes if n.client_facing],
         }
@@ -296,36 +315,21 @@ class MyAgent:
             )
         else:
             if "start" not in self.entry_points:
-                errors.append(
-                    "entry_points must include 'start' mapped to entry_node. "
-                    "Example: {'start': '<entry-node-id>'}."
-                )
+                errors.append("entry_points must include 'start' mapped to entry_node. Example: {'start': '<entry-node-id>'}.")
             else:
                 start_node = self.entry_points.get("start")
                 if start_node != self.entry_node:
-                    errors.append(
-                        f"entry_points['start'] points to '{start_node}' "
-                        f"but entry_node is '{self.entry_node}'. Keep these aligned."
-                    )
+                    errors.append(f"entry_points['start'] points to '{start_node}' but entry_node is '{self.entry_node}'. Keep these aligned.")
 
             for ep_id, nid in self.entry_points.items():
                 if not isinstance(ep_id, str):
-                    errors.append(
-                        f"Invalid entry_points key {ep_id!r} "
-                        f"({type(ep_id).__name__}). Entry point names must be strings."
-                    )
+                    errors.append(f"Invalid entry_points key {ep_id!r} ({type(ep_id).__name__}). Entry point names must be strings.")
                     continue
                 if not isinstance(nid, str):
-                    errors.append(
-                        f"Invalid entry_points['{ep_id}']={nid!r} "
-                        f"({type(nid).__name__}). Node ids must be strings."
-                    )
+                    errors.append(f"Invalid entry_points['{ep_id}']={nid!r} ({type(nid).__name__}). Node ids must be strings.")
                     continue
                 if nid not in node_ids:
-                    errors.append(
-                        f"Entry point '{ep_id}' references unknown node '{nid}'. "
-                        f"Known nodes: {sorted(node_ids)}"
-                    )
+                    errors.append(f"Entry point '{ep_id}' references unknown node '{nid}'. Known nodes: {sorted(node_ids)}")
 
         return {"valid": len(errors) == 0, "errors": errors, "warnings": warnings}
 
@@ -430,9 +434,12 @@ from .agent import default_agent, MyAgent
 
 
 def setup_logging(verbose=False, debug=False):
-    if debug: level, fmt = logging.DEBUG, "%(asctime)s %(name)s: %(message)s"
-    elif verbose: level, fmt = logging.INFO, "%(message)s"
-    else: level, fmt = logging.WARNING, "%(levelname)s: %(message)s"
+    if debug:
+        level, fmt = logging.DEBUG, "%(asctime)s %(name)s: %(message)s"
+    elif verbose:
+        level, fmt = logging.INFO, "%(message)s"
+    else:
+        level, fmt = logging.WARNING, "%(levelname)s: %(message)s"
     logging.basicConfig(level=level, format=fmt, stream=sys.stderr)
 
 
@@ -470,18 +477,25 @@ def tui():
         storage = Path.home() / ".hive" / "agents" / "my_agent"
         storage.mkdir(parents=True, exist_ok=True)
         mcp_cfg = Path(__file__).parent / "mcp_servers.json"
-        if mcp_cfg.exists(): agent._tool_registry.load_mcp_config(mcp_cfg)
+        if mcp_cfg.exists():
+            agent._tool_registry.load_mcp_config(mcp_cfg)
         llm = LiteLLMProvider(model=agent.config.model, api_key=agent.config.api_key, api_base=agent.config.api_base)
         runtime = AgentHost(
-            graph=agent._build_graph(), goal=agent.goal, storage_path=storage,
+            graph=agent._build_graph(),
+            goal=agent.goal,
+            storage_path=storage,
             entry_points=[EntryPointSpec(id="start", name="Start", entry_node="process", trigger_type="manual", isolation_level="isolated")],
-            llm=llm, tools=list(agent._tool_registry.get_tools().values()), tool_executor=agent._tool_registry.get_executor())
+            llm=llm,
+            tools=list(agent._tool_registry.get_tools().values()),
+            tool_executor=agent._tool_registry.get_executor(),
+        )
         await runtime.start()
         try:
             app = AdenTUI(runtime)
             await app.run_async()
         finally:
             await runtime.stop()
+
     asyncio.run(run_tui())
 
 
@@ -497,10 +511,12 @@ def info():
 def validate():
     """Validate agent structure."""
     v = default_agent.validate()
-    if v["valid"]: click.echo("Agent is valid")
+    if v["valid"]:
+        click.echo("Agent is valid")
     else:
         click.echo("Errors:")
-        for e in v["errors"]: click.echo(f"  {e}")
+        for e in v["errors"]:
+            click.echo(f"  {e}")
     sys.exit(0 if v["valid"] else 1)
 
 
@@ -553,6 +569,7 @@ AGENT_PATH = str(Path(__file__).resolve().parents[1])
 def agent_module():
     """Import the agent package for structural validation."""
     import importlib
+
     return importlib.import_module(Path(AGENT_PATH).name)
 
 
@@ -560,6 +577,7 @@ def agent_module():
 def runner_loaded():
     """Load the agent through AgentRunner (structural only, no LLM needed)."""
     from framework.runner.runner import AgentRunner
+
     return AgentRunner.load(AGENT_PATH)
 ```
 

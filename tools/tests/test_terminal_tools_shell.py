@@ -8,7 +8,6 @@ covered on the POSIX CI without a Windows box.
 from __future__ import annotations
 
 import pytest
-
 from terminal_tools.common import limits
 from terminal_tools.common.limits import (
     ZshRefused,

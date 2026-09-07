@@ -9,9 +9,8 @@ raise.
 
 from __future__ import annotations
 
-import pytest
-
 import gcu.browser.tools.lifecycle as lc
+import pytest
 from gcu.browser.bridge import BeelineBridge, _Connection
 from gcu.browser.bridge_rpc import RPC_METHODS
 

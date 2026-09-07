@@ -14,9 +14,8 @@ openpyxl_available = importlib.util.find_spec("openpyxl") is not None
 pytestmark = pytest.mark.skipif(not openpyxl_available, reason="openpyxl not installed")
 
 if openpyxl_available:
-    from openpyxl import Workbook
-
     from aden_tools.tools.excel_tool.excel_tool import register_tools
+    from openpyxl import Workbook
 
 # Test IDs for sandbox
 TEST_AGENT_ID = "test-workspace"

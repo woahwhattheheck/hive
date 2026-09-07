@@ -17,9 +17,8 @@ from __future__ import annotations
 import asyncio
 import json
 
-import pytest
-
 import gcu.browser.bridge as bridge_mod
+import pytest
 from gcu.browser.bridge import BeelineBridge, BridgeError, _Connection
 
 

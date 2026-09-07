@@ -3,9 +3,8 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.twitter_tool.twitter_tool import register_tools
+from fastmcp import FastMCP
 
 ENV = {"X_BEARER_TOKEN": "test-bearer-token"}
 

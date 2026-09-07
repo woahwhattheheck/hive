@@ -60,12 +60,7 @@ List upcoming calendar events.
 
 **Example:**
 ```python
-calendar_list_events(
-    calendar_id="primary",
-    time_min="2024-01-15T00:00:00Z",
-    time_max="2024-01-22T00:00:00Z",
-    max_results=20
-)
+calendar_list_events(calendar_id="primary", time_min="2024-01-15T00:00:00Z", time_max="2024-01-22T00:00:00Z", max_results=20)
 ```
 
 ### calendar_get_event
@@ -106,7 +101,7 @@ calendar_create_event(
     end_time="2024-01-15T09:30:00",
     timezone="America/New_York",
     attendees=["alice@example.com", "bob@example.com"],
-    description="Daily sync meeting"
+    description="Daily sync meeting",
 )
 ```
 
@@ -116,7 +111,7 @@ calendar_create_event(
     summary="Company Holiday",
     start_time="2024-12-25",
     end_time="2024-12-26",  # end date is exclusive
-    all_day=True
+    all_day=True,
 )
 ```
 
@@ -184,9 +179,7 @@ Check free/busy status for scheduling.
 **Example:**
 ```python
 calendar_check_availability(
-    time_min="2024-01-15T00:00:00Z",
-    time_max="2024-01-16T00:00:00Z",
-    calendars=["primary", "team-calendar@group.calendar.google.com"]
+    time_min="2024-01-15T00:00:00Z", time_max="2024-01-16T00:00:00Z", calendars=["primary", "team-calendar@group.calendar.google.com"]
 )
 ```
 
@@ -233,17 +226,11 @@ All tools return a dict with either success data or an error:
 ### Schedule a meeting with availability check
 ```python
 # 1. Check when everyone is free
-availability = calendar_check_availability(
-    time_min="2024-01-15T00:00:00Z",
-    time_max="2024-01-19T00:00:00Z"
-)
+availability = calendar_check_availability(time_min="2024-01-15T00:00:00Z", time_max="2024-01-19T00:00:00Z")
 
 # 2. Create the meeting at a free slot
 event = calendar_create_event(
-    summary="Project Review",
-    start_time="2024-01-16T14:00:00Z",
-    end_time="2024-01-16T15:00:00Z",
-    attendees=["team@example.com"]
+    summary="Project Review", start_time="2024-01-16T14:00:00Z", end_time="2024-01-16T15:00:00Z", attendees=["team@example.com"]
 )
 ```
 
@@ -254,10 +241,7 @@ from datetime import datetime, timedelta
 today = datetime.now().replace(hour=0, minute=0, second=0)
 tomorrow = today + timedelta(days=1)
 
-events = calendar_list_events(
-    time_min=today.isoformat() + "Z",
-    time_max=tomorrow.isoformat() + "Z"
-)
+events = calendar_list_events(time_min=today.isoformat() + "Z", time_max=tomorrow.isoformat() + "Z")
 ```
 
 ## API Reference

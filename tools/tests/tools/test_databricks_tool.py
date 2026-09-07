@@ -3,9 +3,8 @@
 from unittest.mock import patch
 
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.databricks_tool.databricks_tool import register_tools
+from fastmcp import FastMCP
 
 ENV = {"DATABRICKS_TOKEN": "dapi-test", "DATABRICKS_HOST": "https://test.cloud.databricks.com"}
 

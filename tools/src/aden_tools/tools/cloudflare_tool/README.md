@@ -228,10 +228,7 @@ zones = mcp.tools["cloudflare_list_zones"](page=1, per_page=20)
 zone = mcp.tools["cloudflare_get_zone"](zone_id="023e105f4ecef8ad9ca31a8372d0c353")
 
 # List DNS records for a zone
-records = mcp.tools["cloudflare_list_dns_records"](
-    zone_id="023e105f4ecef8ad9ca31a8372d0c353",
-    type="A"
-)
+records = mcp.tools["cloudflare_list_dns_records"](zone_id="023e105f4ecef8ad9ca31a8372d0c353", type="A")
 
 # Check DNS health for a domain
 health = mcp.tools["cloudflare_check_domain_dns_health"](domain="example.com")

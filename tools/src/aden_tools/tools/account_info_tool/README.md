@@ -25,18 +25,10 @@ Returns:
 ```python
 {
     "accounts": [
-        {
-            "account_id": "google_main",
-            "provider": "google",
-            "identity": "user@gmail.com"
-        },
-        {
-            "account_id": "slack_workspace",
-            "provider": "slack",
-            "identity": "My Workspace"
-        }
+        {"account_id": "google_main", "provider": "google", "identity": "user@gmail.com"},
+        {"account_id": "slack_workspace", "provider": "slack", "identity": "My Workspace"},
     ],
-    "count": 2
+    "count": 2,
 }
 ```
 
@@ -47,16 +39,7 @@ get_account_info(provider="google")
 
 Returns only Google-connected accounts:
 ```python
-{
-    "accounts": [
-        {
-            "account_id": "google_main",
-            "provider": "google",
-            "identity": "user@gmail.com"
-        }
-    ],
-    "count": 1
-}
+{"accounts": [{"account_id": "google_main", "provider": "google", "identity": "user@gmail.com"}], "count": 1}
 ```
 
 ## API Reference

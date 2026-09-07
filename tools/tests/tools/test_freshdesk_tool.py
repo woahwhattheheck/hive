@@ -4,11 +4,10 @@ from unittest.mock import MagicMock, patch
 
 import httpx
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.credentials import CredentialStoreAdapter
 from aden_tools.tools.freshdesk_tool import register_tools
 from aden_tools.tools.freshdesk_tool.freshdesk_tool import _auth_header, _base_url
+from fastmcp import FastMCP
 
 MOCK_CREDS = {
     "freshdesk": "test-api-key",

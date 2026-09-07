@@ -3,9 +3,8 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.sap_tool.sap_tool import register_tools
+from fastmcp import FastMCP
 
 ENV = {
     "SAP_BASE_URL": "https://my-tenant-api.s4hana.ondemand.com",

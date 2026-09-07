@@ -11,7 +11,6 @@ Covers:
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from aden_tools.tools.google_analytics_tool.google_analytics_tool import (
     _GAClient,
     register_tools,
@@ -734,9 +733,8 @@ class TestToolRegistration:
 
     def test_register_all_tools_includes_ga_tools(self):
         """register_all_tools return list includes all GA tool names."""
-        from fastmcp import FastMCP
-
         from aden_tools.tools import register_all_tools
+        from fastmcp import FastMCP
 
         mcp = FastMCP("test-ga-registration")
 

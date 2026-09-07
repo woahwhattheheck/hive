@@ -93,8 +93,8 @@ docker_hub_list_webhooks(repository="myusername/myapp")
             "last_updated": "2025-05-01T12:00:00Z",
             "digest": "sha256:abc123...",
         },
-        ...
-    ]
+        ...,
+    ],
 }
 ```
 
@@ -108,7 +108,7 @@ docker_hub_list_webhooks(repository="myusername/myapp")
     "images": [
         {"architecture": "amd64", "os": "linux", "size": 34000000, "digest": "sha256:..."},
         {"architecture": "arm64", "os": "linux", "size": 32000000, "digest": "sha256:..."},
-    ]
+    ],
 }
 ```
 

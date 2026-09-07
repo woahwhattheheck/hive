@@ -3,9 +3,8 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.tines_tool.tines_tool import register_tools
+from fastmcp import FastMCP
 
 ENV = {
     "TINES_DOMAIN": "test-tenant.tines.com",

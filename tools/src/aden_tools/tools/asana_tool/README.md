@@ -22,31 +22,19 @@ The tool uses a Personal Access Token (PAT) for authentication.
 ### Create a Task
 
 ```python
-result = asana_create_task(
-    name="Fix login bug",
-    notes="Users are getting 500 error on login",
-    due_on="2026-02-15",
-    assignee="me@example.com"
-)
+result = asana_create_task(name="Fix login bug", notes="Users are getting 500 error on login", due_on="2026-02-15", assignee="me@example.com")
 ```
 
 ### Create a Project
 
 ```python
-result = asana_create_project(
-    name="Q1 Goals",
-    notes="Objectives for this quarter",
-    public=True
-)
+result = asana_create_project(name="Q1 Goals", notes="Objectives for this quarter", public=True)
 ```
 
 ### Search Tasks
 
 ```python
-tasks = asana_search_tasks(
-    text="login",
-    completed=False
-)
+tasks = asana_search_tasks(text="login", completed=False)
 ```
 
 ## Tools

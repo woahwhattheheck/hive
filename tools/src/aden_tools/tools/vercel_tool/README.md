@@ -64,11 +64,7 @@ vercel_list_env_vars(project_id="my-project")
 ### Create an environment variable
 ```python
 vercel_create_env_var(
-    project_id="my-project",
-    key="DATABASE_URL",
-    value="postgresql://user:pass@host/db",
-    target="production,preview",
-    env_type="encrypted"
+    project_id="my-project", key="DATABASE_URL", value="postgresql://user:pass@host/db", target="production,preview", env_type="encrypted"
 )
 ```
 

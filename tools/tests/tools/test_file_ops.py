@@ -8,9 +8,8 @@ import os
 from unittest.mock import patch
 
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.file_ops import register_file_tools
+from fastmcp import FastMCP
 
 
 @pytest.fixture

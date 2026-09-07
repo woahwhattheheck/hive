@@ -63,10 +63,9 @@ if "--stdio" in sys.argv:
 
     rich.console.Console.__init__ = _patched_console_init
 
-from fastmcp import FastMCP  # noqa: E402
-
 from aden_tools.credentials import CredentialError, CredentialStoreAdapter  # noqa: E402
 from aden_tools.tools import register_all_tools  # noqa: E402
+from fastmcp import FastMCP  # noqa: E402
 
 credentials = CredentialStoreAdapter.default()
 

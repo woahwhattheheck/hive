@@ -20,27 +20,17 @@ Performs TCP connect scans using Python's asyncio. The scanner:
 
 ### Scan Top 20 Common Ports
 ```python
-port_scan(
-    hostname="example.com",
-    ports="top20"
-)
+port_scan(hostname="example.com", ports="top20")
 ```
 
 ### Scan Top 100 Ports
 ```python
-port_scan(
-    hostname="example.com",
-    ports="top100",
-    timeout=5.0
-)
+port_scan(hostname="example.com", ports="top100", timeout=5.0)
 ```
 
 ### Scan Specific Ports
 ```python
-port_scan(
-    hostname="example.com",
-    ports="80,443,8080,3306,5432"
-)
+port_scan(hostname="example.com", ports="80,443,8080,3306,5432")
 ```
 
 ## API Reference

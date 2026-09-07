@@ -61,9 +61,9 @@ List repositories for a user or the authenticated user.
             "private": False,
             "html_url": "https://github.com/username/my-repo",
             "stargazers_count": 42,
-            "forks_count": 7
+            "forks_count": 7,
         }
-    ]
+    ],
 }
 ```
 
@@ -99,8 +99,8 @@ Get detailed information about a specific repository.
         "forks_count": 25,
         "language": "Python",
         "created_at": "2024-01-01T00:00:00Z",
-        "updated_at": "2024-01-31T12:00:00Z"
-    }
+        "updated_at": "2024-01-31T12:00:00Z",
+    },
 }
 ```
 
@@ -126,26 +126,16 @@ Search for repositories on GitHub.
     "data": {
         "total_count": 1000,
         "items": [
-            {
-                "id": 123,
-                "name": "awesome-python",
-                "full_name": "user/awesome-python",
-                "description": "A curated list",
-                "stargazers_count": 5000
-            }
-        ]
-    }
+            {"id": 123, "name": "awesome-python", "full_name": "user/awesome-python", "description": "A curated list", "stargazers_count": 5000}
+        ],
+    },
 }
 ```
 
 **Example:**
 ```python
 # Search for Python repos with many stars
-result = github_search_repos(
-    query="language:python stars:>1000",
-    sort="stars",
-    limit=10
-)
+result = github_search_repos(query="language:python stars:>1000", sort="stars", limit=10)
 
 # Search in a specific organization
 result = github_search_repos(query="org:adenhq agent")
@@ -175,9 +165,9 @@ List issues for a repository.
             "user": {"login": "username"},
             "labels": [{"name": "bug"}],
             "created_at": "2024-01-30T10:00:00Z",
-            "html_url": "https://github.com/owner/repo/issues/42"
+            "html_url": "https://github.com/owner/repo/issues/42",
         }
-    ]
+    ],
 }
 ```
 
@@ -210,8 +200,8 @@ Get a specific issue by number.
         "user": {"login": "username"},
         "assignees": [],
         "labels": [{"name": "enhancement"}],
-        "comments": 5
-    }
+        "comments": 5,
+    },
 }
 ```
 
@@ -235,14 +225,7 @@ Create a new issue in a repository.
 
 **Returns:**
 ```python
-{
-    "success": True,
-    "data": {
-        "number": 43,
-        "title": "New issue",
-        "html_url": "https://github.com/owner/repo/issues/43"
-    }
-}
+{"success": True, "data": {"number": 43, "title": "New issue", "html_url": "https://github.com/owner/repo/issues/43"}}
 ```
 
 **Example:**
@@ -253,7 +236,7 @@ result = github_create_issue(
     title="Add new feature",
     body="## Description\n\nWe need to add...",
     labels=["enhancement", "help wanted"],
-    assignees=["developer1"]
+    assignees=["developer1"],
 )
 print(f"Created issue #{result['data']['number']}")
 ```
@@ -273,26 +256,13 @@ Update an existing issue.
 
 **Returns:**
 ```python
-{
-    "success": True,
-    "data": {
-        "number": 43,
-        "title": "Updated title",
-        "state": "closed"
-    }
-}
+{"success": True, "data": {"number": 43, "title": "Updated title", "state": "closed"}}
 ```
 
 **Example:**
 ```python
 # Close an issue
-result = github_update_issue(
-    owner="myorg",
-    repo="myrepo",
-    issue_number=43,
-    state="closed",
-    body="Fixed in PR #44"
-)
+result = github_update_issue(owner="myorg", repo="myrepo", issue_number=43, state="closed", body="Fixed in PR #44")
 ```
 
 ### Pull Request Management
@@ -319,9 +289,9 @@ List pull requests for a repository.
             "user": {"login": "contributor"},
             "head": {"ref": "feature-branch"},
             "base": {"ref": "main"},
-            "html_url": "https://github.com/owner/repo/pull/10"
+            "html_url": "https://github.com/owner/repo/pull/10",
         }
-    ]
+    ],
 }
 ```
 
@@ -353,8 +323,8 @@ Get a specific pull request.
         "merged": False,
         "draft": False,
         "head": {"ref": "feature"},
-        "base": {"ref": "main"}
-    }
+        "base": {"ref": "main"},
+    },
 }
 ```
 
@@ -379,14 +349,7 @@ Create a new pull request.
 
 **Returns:**
 ```python
-{
-    "success": True,
-    "data": {
-        "number": 11,
-        "title": "New PR",
-        "html_url": "https://github.com/owner/repo/pull/11"
-    }
-}
+{"success": True, "data": {"number": 11, "title": "New PR", "html_url": "https://github.com/owner/repo/pull/11"}}
 ```
 
 **Example:**
@@ -398,7 +361,7 @@ result = github_create_pull_request(
     head="feature/github-tool",
     base="main",
     body="## Summary\n\n- Implements GitHub API integration\n- Adds 30+ tests",
-    draft=False
+    draft=False,
 )
 print(f"Created PR: {result['data']['html_url']}")
 ```
@@ -423,22 +386,18 @@ Search code across GitHub.
             {
                 "name": "example.py",
                 "path": "src/example.py",
-                "repository": {
-                    "full_name": "owner/repo"
-                },
-                "html_url": "https://github.com/owner/repo/blob/main/src/example.py"
+                "repository": {"full_name": "owner/repo"},
+                "html_url": "https://github.com/owner/repo/blob/main/src/example.py",
             }
-        ]
-    }
+        ],
+    },
 }
 ```
 
 **Example:**
 ```python
 # Search for function usage
-result = github_search_code(
-    query="register_tools language:python repo:adenhq/hive"
-)
+result = github_search_code(query="register_tools language:python repo:adenhq/hive")
 
 # Search for specific code pattern
 result = github_search_code(query="FastMCP extension:py")
@@ -457,20 +416,7 @@ List branches for a repository.
 
 **Returns:**
 ```python
-{
-    "success": True,
-    "data": [
-        {
-            "name": "main",
-            "protected": True,
-            "commit": {"sha": "abc123..."}
-        },
-        {
-            "name": "develop",
-            "protected": False
-        }
-    ]
-}
+{"success": True, "data": [{"name": "main", "protected": True, "commit": {"sha": "abc123..."}}, {"name": "develop", "protected": False}]}
 ```
 
 **Example:**
@@ -491,19 +437,7 @@ Get information about a specific branch.
 
 **Returns:**
 ```python
-{
-    "success": True,
-    "data": {
-        "name": "main",
-        "protected": True,
-        "commit": {
-            "sha": "abc123...",
-            "commit": {
-                "message": "Latest commit message"
-            }
-        }
-    }
-}
+{"success": True, "data": {"name": "main", "protected": True, "commit": {"sha": "abc123...", "commit": {"message": "Latest commit message"}}}}
 ```
 
 **Example:**
@@ -517,9 +451,7 @@ print(f"Latest commit: {main_branch['data']['commit']['sha']}")
 All functions return a dict with an `error` key if something goes wrong:
 
 ```python
-{
-    "error": "GitHub API error (HTTP 404): Not Found"
-}
+{"error": "GitHub API error (HTTP 404): Not Found"}
 ```
 
 Common errors:
@@ -544,11 +476,7 @@ Common errors:
 ```python
 # Create issues from bug reports
 github_create_issue(
-    owner="myorg",
-    repo="myapp",
-    title="Bug: Login fails on mobile",
-    body="## Steps to reproduce\n1. Open app on mobile...",
-    labels=["bug", "mobile"]
+    owner="myorg", repo="myapp", title="Bug: Login fails on mobile", body="## Steps to reproduce\n1. Open app on mobile...", labels=["bug", "mobile"]
 )
 ```
 
@@ -556,12 +484,7 @@ github_create_issue(
 ```python
 # Create PR after automated changes
 github_create_pull_request(
-    owner="myorg",
-    repo="myrepo",
-    title="chore: Update dependencies",
-    head="bot/update-deps",
-    base="main",
-    body="Automated dependency updates"
+    owner="myorg", repo="myrepo", title="chore: Update dependencies", head="bot/update-deps", base="main", body="Automated dependency updates"
 )
 ```
 
@@ -580,10 +503,7 @@ print(f"Open PRs: {len(prs['data'])}")
 ### Code Discovery
 ```python
 # Find examples of API usage
-results = github_search_code(
-    query="register_tools language:python",
-    limit=50
-)
+results = github_search_code(query="register_tools language:python", limit=50)
 for item in results["data"]["items"]:
     print(f"Found in: {item['repository']['full_name']}")
 ```
@@ -595,13 +515,7 @@ issues = github_list_issues(owner="myorg", repo="myrepo", state="open")
 for issue in issues["data"]:
     # Check if stale (custom logic)
     if is_stale(issue):
-        github_update_issue(
-            owner="myorg",
-            repo="myrepo",
-            issue_number=issue["number"],
-            state="closed",
-            body="Closing due to inactivity"
-        )
+        github_update_issue(owner="myorg", repo="myrepo", issue_number=issue["number"], state="closed", body="Closing due to inactivity")
 ```
 
 ## Rate Limits
@@ -634,13 +548,8 @@ For `github_search_repos` and `github_search_code`, you can use advanced search 
 Examples:
 ```python
 # Find popular Python ML projects
-github_search_repos(
-    query="language:python topic:machine-learning stars:>5000",
-    sort="stars"
-)
+github_search_repos(query="language:python topic:machine-learning stars:>5000", sort="stars")
 
 # Find FastMCP usage examples
-github_search_code(
-    query="FastMCP extension:py"
-)
+github_search_code(query="FastMCP extension:py")
 ```

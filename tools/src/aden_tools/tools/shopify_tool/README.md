@@ -128,7 +128,10 @@ shopify_create_draft_order(
 All tools return error dicts on failure:
 
 ```python
-{"error": "Shopify credentials not configured", "help": "Set SHOPIFY_ACCESS_TOKEN and SHOPIFY_STORE_NAME environment variables or configure via credential store"}
+{
+    "error": "Shopify credentials not configured",
+    "help": "Set SHOPIFY_ACCESS_TOKEN and SHOPIFY_STORE_NAME environment variables or configure via credential store",
+}
 {"error": "Invalid Shopify access token"}
 {"error": "Insufficient API scopes for this Shopify resource"}
 {"error": "Shopify rate limit exceeded. Try again later."}

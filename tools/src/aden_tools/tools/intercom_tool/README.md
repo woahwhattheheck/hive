@@ -70,12 +70,7 @@ intercom_add_note(conversation_id="12345", body="Escalating to engineering")
 intercom_add_tag(name="VIP", conversation_id="12345")
 
 # Assign to a team
-intercom_assign_conversation(
-    conversation_id="12345",
-    assignee_id="67890",
-    assignee_type="team",
-    body="Routing to billing team"
-)
+intercom_assign_conversation(conversation_id="12345", assignee_id="67890", assignee_type="team", body="Routing to billing team")
 
 # List available teams
 intercom_list_teams()

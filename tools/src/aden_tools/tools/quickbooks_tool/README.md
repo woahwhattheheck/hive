@@ -55,7 +55,10 @@ quickbooks_list_invoices(start_date="2026-01-01", status="Overdue")
 
 All tools return error dicts on failure:
 ```python
-{"error": "QUICKBOOKS_ACCESS_TOKEN and QUICKBOOKS_REALM_ID are required", "help": "Set QUICKBOOKS_ACCESS_TOKEN and QUICKBOOKS_REALM_ID environment variables"}
+{
+    "error": "QUICKBOOKS_ACCESS_TOKEN and QUICKBOOKS_REALM_ID are required",
+    "help": "Set QUICKBOOKS_ACCESS_TOKEN and QUICKBOOKS_REALM_ID environment variables",
+}
 {"error": "QuickBooks API error (HTTP 401): AuthenticationFailed"}
 {"error": "Request timed out"}
 ```

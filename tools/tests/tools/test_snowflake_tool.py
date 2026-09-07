@@ -3,9 +3,8 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.snowflake_tool.snowflake_tool import register_tools
+from fastmcp import FastMCP
 
 ENV = {"SNOWFLAKE_ACCOUNT": "xy12345.us-east-1", "SNOWFLAKE_TOKEN": "test-token"}
 

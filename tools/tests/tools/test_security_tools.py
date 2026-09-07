@@ -6,7 +6,6 @@ import asyncio
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
-
 from aden_tools.tools.tech_stack_detector.tech_stack_detector import (
     _analyze_cookies,
     _extract_samesite,

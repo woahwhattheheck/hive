@@ -8,10 +8,9 @@ from collections.abc import Callable
 from pathlib import Path
 
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.credentials import CREDENTIAL_SPECS, CredentialStoreAdapter
 from aden_tools.credentials.store_adapter import _reset_default_adapter_cache
+from fastmcp import FastMCP
 
 logger = logging.getLogger(__name__)
 

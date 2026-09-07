@@ -173,11 +173,7 @@ stripe_list_invoices(status="open", limit=20)
 stripe_create_refund(payment_intent_id="pi_AbcDefGhijkLmn")
 
 # Partial refund via charge with reason
-stripe_create_refund(
-    charge_id="ch_AbcDefGhijkLmn",
-    amount=1000,
-    reason="customer_request"
-)
+stripe_create_refund(charge_id="ch_AbcDefGhijkLmn", amount=1000, reason="customer_request")
 ```
 
 ## Authentication

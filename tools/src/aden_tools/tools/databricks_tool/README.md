@@ -34,70 +34,45 @@ Query Databricks SQL Warehouses and interact with Databricks managed MCP servers
 ### Execute a Read-Only SQL Query
 
 ```python
-run_databricks_sql(
-    sql="SELECT name, COUNT(*) as cnt FROM main.default.users GROUP BY name",
-    warehouse_id="abc123def456",
-    max_rows=100
-)
+run_databricks_sql(sql="SELECT name, COUNT(*) as cnt FROM main.default.users GROUP BY name", warehouse_id="abc123def456", max_rows=100)
 ```
 
 ### Describe a Unity Catalog Table
 
 ```python
-describe_databricks_table(
-    catalog="main",
-    schema="default",
-    table="users"
-)
+describe_databricks_table(catalog="main", schema="default", table="users")
 ```
 
 ### Query via Managed MCP SQL Server
 
 ```python
-databricks_mcp_query_sql(
-    sql="SELECT * FROM main.default.orders LIMIT 10"
-)
+databricks_mcp_query_sql(sql="SELECT * FROM main.default.orders LIMIT 10")
 ```
 
 ### Execute a Unity Catalog Function
 
 ```python
-databricks_mcp_query_uc_function(
-    catalog="main",
-    schema="analytics",
-    function_name="get_revenue_summary",
-    arguments={"start_date": "2024-01-01"}
-)
+databricks_mcp_query_uc_function(catalog="main", schema="analytics", function_name="get_revenue_summary", arguments={"start_date": "2024-01-01"})
 ```
 
 ### Search a Vector Index
 
 ```python
 databricks_mcp_vector_search(
-    catalog="prod",
-    schema="knowledge_base",
-    index_name="docs_index",
-    query="How to configure authentication?",
-    num_results=5
+    catalog="prod", schema="knowledge_base", index_name="docs_index", query="How to configure authentication?", num_results=5
 )
 ```
 
 ### Query a Genie Space
 
 ```python
-databricks_mcp_query_genie(
-    genie_space_id="abc123",
-    question="What was the total revenue last quarter?"
-)
+databricks_mcp_query_genie(genie_space_id="abc123", question="What was the total revenue last quarter?")
 ```
 
 ### Discover Available MCP Tools
 
 ```python
-databricks_mcp_list_tools(
-    server_type="functions",
-    resource_path="system/ai"
-)
+databricks_mcp_list_tools(server_type="functions", resource_path="system/ai")
 ```
 
 ## Safety Features

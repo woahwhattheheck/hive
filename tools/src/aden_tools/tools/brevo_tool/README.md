@@ -60,7 +60,7 @@ brevo_send_email(
     html_content="<h1>Hello John!</h1><p>Your report has been generated.</p>",
     from_email="agent@yourcompany.com",
     from_name="Hive Agent",
-    text_content="Hello John! Your report has been generated."  # optional
+    text_content="Hello John! Your report has been generated.",  # optional
 )
 # Returns: {"success": True, "message_id": "<abc123@smtp-relay.brevo.com>"}
 ```
@@ -68,9 +68,9 @@ brevo_send_email(
 ### Send an SMS
 ```python
 brevo_send_sms(
-    to="+919876543210",       # international format required
+    to="+919876543210",  # international format required
     content="Your OTP is 4821. Valid for 10 minutes.",
-    sender="HiveAgent"        # max 11 alphanumeric characters
+    sender="HiveAgent",  # max 11 alphanumeric characters
 )
 # Returns: {"success": True, "reference": "...", "remaining_credits": 95.0}
 ```
@@ -82,7 +82,7 @@ brevo_create_contact(
     first_name="Jane",
     last_name="Smith",
     phone="+14155552671",
-    list_ids="2,5"            # comma-separated list IDs
+    list_ids="2,5",  # comma-separated list IDs
 )
 # Returns: {"success": True, "id": 42, "email": "lead@example.com"}
 ```
@@ -108,8 +108,8 @@ brevo_get_contact(email="lead@example.com")
 brevo_update_contact(
     email="lead@example.com",
     first_name="Jane",
-    last_name="Johnson",      # updated last name
-    list_ids="2,5,8"          # added to list 8
+    last_name="Johnson",  # updated last name
+    list_ids="2,5,8",  # added to list 8
 )
 # Returns: {"success": True, "email": "lead@example.com"}
 ```

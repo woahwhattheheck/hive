@@ -5,9 +5,8 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.csv_tool.csv_tool import register_tools
+from fastmcp import FastMCP
 
 duckdb_available = importlib.util.find_spec("duckdb") is not None
 

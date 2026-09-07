@@ -3,9 +3,8 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.plaid_tool.plaid_tool import register_tools
+from fastmcp import FastMCP
 
 ENV = {"PLAID_CLIENT_ID": "test-client-id", "PLAID_SECRET": "test-secret", "PLAID_ENV": "sandbox"}
 

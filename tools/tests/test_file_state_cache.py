@@ -16,10 +16,9 @@ import time
 from pathlib import Path
 
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools import file_state_cache
 from aden_tools.file_ops import register_file_tools
+from fastmcp import FastMCP
 
 
 def _find_tool(mcp: FastMCP, name: str):

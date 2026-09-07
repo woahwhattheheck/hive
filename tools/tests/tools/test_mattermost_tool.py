@@ -11,7 +11,6 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from aden_tools.tools.mattermost_tool.mattermost_tool import (
     MAX_MESSAGE_LENGTH,
     MAX_RETRIES,

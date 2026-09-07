@@ -3,9 +3,8 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.airtable_tool.airtable_tool import register_tools
+from fastmcp import FastMCP
 
 ENV = {"AIRTABLE_PAT": "pat-test-token"}
 

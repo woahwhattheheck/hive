@@ -3,9 +3,8 @@
 from unittest.mock import patch
 
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.pushover_tool.pushover_tool import register_tools
+from fastmcp import FastMCP
 
 ENV = {"PUSHOVER_API_TOKEN": "test-token"}
 

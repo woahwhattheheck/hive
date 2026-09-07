@@ -3,7 +3,6 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from aden_tools.credentials import (
     CREDENTIAL_SPECS,
     CredentialError,

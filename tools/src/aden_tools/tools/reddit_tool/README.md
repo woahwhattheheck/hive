@@ -76,13 +76,7 @@ $env:REDDIT_CREDENTIALS='{"client_id":"YOUR_CLIENT_ID","client_secret":"YOUR_SEC
 
 ```python
 # Search for posts mentioning your brand
-result = reddit_search_posts(
-    query="YourBrand",
-    subreddit="all",
-    time_filter="day",
-    sort="new",
-    limit=50
-)
+result = reddit_search_posts(query="YourBrand", subreddit="all", time_filter="day", sort="new", limit=50)
 
 for post in result["posts"]:
     print(f"Post: {post['title']}")
@@ -95,10 +89,7 @@ for post in result["posts"]:
 
 ```python
 # Get hot posts from a specific subreddit
-result = reddit_get_subreddit_hot(
-    subreddit="python",
-    limit=25
-)
+result = reddit_get_subreddit_hot(subreddit="python", limit=25)
 
 for post in result["posts"]:
     print(f"{post['title']} ({post['score']} points)")
@@ -108,10 +99,7 @@ for post in result["posts"]:
 
 ```python
 # Reply to a post
-result = reddit_reply_to_post(
-    post_id="abc123",
-    text="Great question! Here's my answer..."
-)
+result = reddit_reply_to_post(post_id="abc123", text="Great question! Here's my answer...")
 
 # Upvote the post
 reddit_upvote(item_id="abc123")
@@ -134,11 +122,7 @@ print(f"Post created: {result['permalink']}")
 
 ```python
 # Get all comments from a post
-result = reddit_get_comments(
-    post_id="abc123",
-    sort="best",
-    limit=100
-)
+result = reddit_get_comments(post_id="abc123", sort="best", limit=100)
 
 for comment in result["comments"]:
     print(f"{comment['author']}: {comment['body'][:100]}")

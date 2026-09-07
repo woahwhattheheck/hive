@@ -315,7 +315,6 @@ def _build_test_session(hive_home: Path, *, queen: str, session: str) -> None:
 def _make_tool():
     """Build a fresh FastMCP and return the registered search_messages fn."""
     from fastmcp import FastMCP
-
     from memory_tools import register_memory_tools
 
     mcp = FastMCP("t")

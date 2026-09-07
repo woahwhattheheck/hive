@@ -3,9 +3,8 @@
 from unittest.mock import patch
 
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.docker_hub_tool.docker_hub_tool import register_tools
+from fastmcp import FastMCP
 
 ENV = {"DOCKER_HUB_TOKEN": "test-token"}
 

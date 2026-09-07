@@ -3,9 +3,8 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.cloudinary_tool.cloudinary_tool import register_tools
+from fastmcp import FastMCP
 
 ENV = {
     "CLOUDINARY_CLOUD_NAME": "test-cloud",

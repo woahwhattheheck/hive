@@ -3,9 +3,8 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.redis_tool.redis_tool import register_tools
+from fastmcp import FastMCP
 
 ENV = {"REDIS_URL": "redis://localhost:6379"}
 

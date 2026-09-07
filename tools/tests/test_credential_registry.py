@@ -8,7 +8,6 @@ These tests run in CI and catch common mistakes when adding new integrations:
 """
 
 import pytest
-
 from aden_tools.credentials import CREDENTIAL_SPECS
 from aden_tools.credentials.health_check import HEALTH_CHECKERS
 

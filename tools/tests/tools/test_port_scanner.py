@@ -6,9 +6,8 @@ import socket
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.port_scanner import register_tools
+from fastmcp import FastMCP
 
 
 @pytest.fixture

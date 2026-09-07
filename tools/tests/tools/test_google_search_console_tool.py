@@ -3,9 +3,8 @@
 from unittest.mock import patch
 
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.google_search_console_tool.google_search_console_tool import register_tools
+from fastmcp import FastMCP
 
 ENV = {"GOOGLE_SEARCH_CONSOLE_TOKEN": "test-token"}
 

@@ -42,12 +42,7 @@ export LINEAR_API_KEY="lin_api_your_api_key"
 
 ### Create an issue
 ```python
-linear_issue_create(
-    title="Fix login bug",
-    team_id="TEAM_UUID",
-    description="Users cannot log in with SSO.",
-    priority=1
-)
+linear_issue_create(title="Fix login bug", team_id="TEAM_UUID", description="Users cannot log in with SSO.", priority=1)
 ```
 
 ### Get an issue
@@ -57,37 +52,22 @@ linear_issue_get(issue_id="ENG-123")
 
 ### Search issues
 ```python
-linear_issue_search(
-    query="login bug",
-    team_id="TEAM_UUID",
-    limit=20
-)
+linear_issue_search(query="login bug", team_id="TEAM_UUID", limit=20)
 ```
 
 ### Update an issue
 ```python
-linear_issue_update(
-    issue_id="ENG-123",
-    state_id="STATE_UUID",
-    priority=2
-)
+linear_issue_update(issue_id="ENG-123", state_id="STATE_UUID", priority=2)
 ```
 
 ### Add a comment
 ```python
-linear_issue_add_comment(
-    issue_id="ENG-123",
-    body="Fixed in PR #456. Ready for review."
-)
+linear_issue_add_comment(issue_id="ENG-123", body="Fixed in PR #456. Ready for review.")
 ```
 
 ### Create a relation between issues
 ```python
-linear_issue_relation_create(
-    issue_id="ENG-123",
-    related_issue_id="ENG-456",
-    relation_type="blocks"
-)
+linear_issue_relation_create(issue_id="ENG-123", related_issue_id="ENG-456", relation_type="blocks")
 ```
 
 ### List teams
@@ -143,7 +123,10 @@ linear_viewer()
 All tools return error dicts on failure:
 
 ```python
-{"error": "Linear credentials not configured", "help": "Set LINEAR_API_KEY environment variable or configure via credential store. Get an API key at https://linear.app/settings/api"}
+{
+    "error": "Linear credentials not configured",
+    "help": "Set LINEAR_API_KEY environment variable or configure via credential store. Get an API key at https://linear.app/settings/api",
+}
 {"error": "Invalid or expired Linear API key"}
 {"error": "Insufficient permissions. Check your Linear API key scopes."}
 {"error": "Linear rate limit exceeded. Try again later."}

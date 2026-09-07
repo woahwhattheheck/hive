@@ -17,7 +17,6 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 import stripe
-
 from aden_tools.tools.stripe_tool.stripe_tool import (
     _StripeClient,
     register_tools,

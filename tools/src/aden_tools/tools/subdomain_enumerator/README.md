@@ -24,10 +24,7 @@ subdomain_enumerate(domain="example.com")
 
 ### Limit Results
 ```python
-subdomain_enumerate(
-    domain="example.com",
-    max_results=100
-)
+subdomain_enumerate(domain="example.com", max_results=100)
 ```
 
 ## API Reference

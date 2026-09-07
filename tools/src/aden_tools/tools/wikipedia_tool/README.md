@@ -14,14 +14,7 @@ This tool allows agents to search Wikipedia and retrieve article summaries witho
 ### As an MCP Tool
 
 ```python
-result = await call_tool(
-    "search_wikipedia",
-    arguments={
-        "query": "Artificial Intelligence",
-        "num_results": 3,
-        "lang": "en"
-    }
-)
+result = await call_tool("search_wikipedia", arguments={"query": "Artificial Intelligence", "num_results": 3, "lang": "en"})
 ```
 
 ### Parameters

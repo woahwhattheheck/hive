@@ -13,7 +13,6 @@ from __future__ import annotations
 import sys
 
 import pytest
-
 from terminal_tools.common.command_guard import check_command
 
 INCIDENT_COMMANDS = [

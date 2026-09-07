@@ -26,9 +26,8 @@ import httpx
 from fastmcp import FastMCP
 
 if TYPE_CHECKING:
-    from framework.credentials.oauth2 import TokenLifecycleManager
-
     from aden_tools.credentials import CredentialStoreAdapter
+    from framework.credentials.oauth2 import TokenLifecycleManager
 
 logger = logging.getLogger(__name__)
 

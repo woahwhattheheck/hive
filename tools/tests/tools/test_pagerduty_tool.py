@@ -3,9 +3,8 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.pagerduty_tool.pagerduty_tool import register_tools
+from fastmcp import FastMCP
 
 ENV = {
     "PAGERDUTY_API_KEY": "test-api-key",

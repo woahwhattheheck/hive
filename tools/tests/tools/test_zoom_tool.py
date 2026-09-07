@@ -3,9 +3,8 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.zoom_tool.zoom_tool import register_tools
+from fastmcp import FastMCP
 
 ENV = {"ZOOM_ACCESS_TOKEN": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.test"}
 

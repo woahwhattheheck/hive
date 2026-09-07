@@ -21,7 +21,6 @@ one field, you are re-arming the bug.
 from __future__ import annotations
 
 import pytest
-
 from aden_tools.tools.senders_tool.senders_tool import (
     _html_to_text,
     _resolve_body,

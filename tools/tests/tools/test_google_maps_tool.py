@@ -3,9 +3,8 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.google_maps_tool import register_tools
+from fastmcp import FastMCP
 
 # ── Fixtures ───────────────────────────────────────────────────────────
 

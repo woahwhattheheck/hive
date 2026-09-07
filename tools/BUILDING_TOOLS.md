@@ -208,6 +208,7 @@ In `tools/__init__.py`, add your tool registration with credentials:
 ```python
 from .my_tool import register_tools as register_my_tool
 
+
 def register_all_tools(mcp: FastMCP, credentials=None) -> list[str]:
     # ... existing registrations
 
@@ -246,6 +247,7 @@ Fix by either:
 
 ```python
 from aden_tools.credentials import CredentialStoreAdapter
+
 
 def test_my_tool_with_valid_key(mcp):
     creds = CredentialStoreAdapter.for_testing({"my_api": "test-key"})

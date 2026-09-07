@@ -101,7 +101,6 @@ async def cmd_navigate(args: argparse.Namespace) -> dict:
     # Import navigation helpers lazily so the module import stays cheap and the
     # rate-limiter (framework dep) is only pulled when a nav actually runs.
     from framework.rate_limiter import SocialRateLimiter
-
     from gcu.browser.tools.navigation import (
         _LINKEDIN_PROFILE_RE,
         _is_instagram_profile_url,

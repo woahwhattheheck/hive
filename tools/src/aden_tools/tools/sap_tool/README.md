@@ -50,7 +50,10 @@ sap_list_sales_orders(top=20)
 
 All tools return error dicts on failure:
 ```python
-{"error": "SAP_BASE_URL, SAP_USERNAME, and SAP_PASSWORD are required", "help": "Set SAP_BASE_URL, SAP_USERNAME, and SAP_PASSWORD environment variables"}
+{
+    "error": "SAP_BASE_URL, SAP_USERNAME, and SAP_PASSWORD are required",
+    "help": "Set SAP_BASE_URL, SAP_USERNAME, and SAP_PASSWORD environment variables",
+}
 {"error": "SAP API error (HTTP 404): Resource not found"}
 {"error": "Request timed out"}
 ```

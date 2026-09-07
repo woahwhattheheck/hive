@@ -12,9 +12,8 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.time_tool import register_tools
+from fastmcp import FastMCP
 
 
 @pytest.fixture

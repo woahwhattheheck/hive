@@ -3,9 +3,8 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.n8n_tool.n8n_tool import register_tools
+from fastmcp import FastMCP
 
 ENV = {
     "N8N_API_KEY": "test-api-key-123",

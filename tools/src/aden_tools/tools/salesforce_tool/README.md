@@ -60,7 +60,10 @@ salesforce_search_records(search_query="FIND {Acme} IN ALL FIELDS RETURNING Acco
 
 All tools return error dicts on failure:
 ```python
-{"error": "Salesforce credentials not configured", "help": "Set SALESFORCE_ACCESS_TOKEN and SALESFORCE_INSTANCE_URL environment variables or configure via credential store"}
+{
+    "error": "Salesforce credentials not configured",
+    "help": "Set SALESFORCE_ACCESS_TOKEN and SALESFORCE_INSTANCE_URL environment variables or configure via credential store",
+}
 {"error": "Salesforce API error (HTTP 400): MALFORMED_QUERY"}
 {"error": "Request timed out"}
 ```

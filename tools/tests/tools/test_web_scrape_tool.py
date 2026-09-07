@@ -5,13 +5,12 @@ from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from fastmcp import FastMCP
-
 from aden_tools.tools.web_scrape_tool import register_tools
 from aden_tools.tools.web_scrape_tool.web_scrape_tool import (
     _check_url_target,
     _is_internal_address,
 )
+from fastmcp import FastMCP
 
 _MOD = "aden_tools.tools.web_scrape_tool.web_scrape_tool"
 _PW_PATH = f"{_MOD}.async_playwright"
