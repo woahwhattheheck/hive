@@ -1,0 +1,248 @@
+name: ASTRA R1 PR7425 stat-scan validation
+
+on:
+  push:
+    branches: [review/astra-r1-7425-stat-validation-20260907]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: PR7425 focused checks (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fa5903074f5f0c0417ce2081b47114b947c8fcc6
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+      - name: Install the existing locked development toolchain
+        run: uv sync --frozen --project core --group dev
+      - name: Add only the child-stat regressions
+        run: |
+          mkdir -p evidence
+          uv run --project core python - <<'PY'
+          import hashlib
+          import json
+          import subprocess
+          from pathlib import Path
+
+          source = Path('core/framework/maintenance/retention.py')
+          tests = Path('core/tests/test_janitor_worker_deepclean.py')
+          expected = {'core/framework/maintenance/retention.py': 'fcc2cc00d75c4ffbca26eb22c09c289d25ab4e9d', 'core/tests/test_janitor_worker_deepclean.py': '70b83f2876bb50057ada68ead49f3d9cd060d0a1'}
+          for path, sha in expected.items():
+              data = subprocess.check_output(['git', 'show', f'HEAD:{path}'])
+              actual = hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
+              assert actual == sha, (path, actual, sha)
+              Path(path).write_bytes(data)
+          Path('evidence/original-retention.py').write_bytes(source.read_bytes())
+          Path('evidence/original-tests.py').write_bytes(tests.read_bytes())
+          instructions = []
+          for directory in (Path('.'), Path('core'), Path('core/framework'), Path('core/framework/maintenance'), Path('core/tests')):
+              path = directory / 'AGENTS.md'
+              if path.exists():
+                  instructions.append(f'--- {path} ---\n' + path.read_text(encoding='utf-8'))
+          Path('evidence/instructions.txt').write_text('\n'.join(instructions), encoding='utf-8')
+          addition = '''
+
+
+@pytest.mark.parametrize("failed_name", ["conversations", "data"])
+def test_child_stat_failure_marks_scan_incomplete(monkeypatch: pytest.MonkeyPatch, failed_name: str) -> None:
+    """A child existence probe can fail before root enumeration starts."""
+    from framework.maintenance import retention
+
+    wdir = _build_worker()
+    blocked = wdir / failed_name
+    healthy = wdir / ("data" if failed_name == "conversations" else "conversations")
+    real_exists = Path.exists
+
+    def fail_child_probe(self):
+        if self == blocked:
+            raise PermissionError(13, "Permission denied", str(self))
+        return real_exists(self)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(Path, "exists", fail_child_probe)
+        targets, scan_complete = retention._deep_clean_targets(wdir)
+
+    assert scan_complete is False
+    assert blocked not in targets
+    assert healthy in targets, "one failed probe must not hide the other child"
+    assert all(p.name not in {"meta.json", "tasks.json", "result.json"} for p in targets)
+    targets, scan_complete = retention._deep_clean_targets(wdir)
+    assert scan_complete is True
+    assert blocked in targets and healthy in targets
+
+
+@pytest.mark.parametrize("failed_name", ["conversations", "data"])
+def test_child_stat_failure_allows_cleanup_and_retry(monkeypatch: pytest.MonkeyPatch, failed_name: str) -> None:
+    """Keep an unreadable child for retry without aborting known cleanup."""
+    wdir = _build_worker()
+    tombstone = b'{"status":"completed","summary":"preserve existing result"}'
+    (wdir / "result.json").write_bytes(tombstone)
+    blocked = wdir / failed_name
+    healthy = wdir / ("data" if failed_name == "conversations" else "conversations")
+    real_exists = Path.exists
+
+    def fail_child_probe(self):
+        if self == blocked:
+            raise PermissionError(13, "Permission denied", str(self))
+        return real_exists(self)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(Path, "exists", fail_child_probe)
+        report = deep_clean_worker("c1", _WID, wdir, disposer=DeleteDisposer(), manifest=Manifest())
+
+    assert blocked.exists(), "the failed probe must not become a deletion target"
+    assert not healthy.exists()
+    assert not any(sub.exists() for sub in _index_subtrees())
+    assert report.bytes_freed > 0
+    assert (wdir / "result.json").read_bytes() == tombstone
+
+    deep_clean_worker("c1", _WID, wdir, disposer=DeleteDisposer(), manifest=Manifest())
+    assert sorted(p.name for p in wdir.iterdir()) == ["meta.json", "result.json", "tasks.json"]
+    assert (wdir / "result.json").read_bytes() == tombstone
+'''
+          tests.write_text(tests.read_text(encoding='utf-8').rstrip() + addition, encoding='utf-8', newline='\n')
+          Path('evidence/versions.txt').write_text(subprocess.check_output(['uv', '--version'], encoding='utf-8'), encoding='utf-8')
+          PY
+      - name: Verify all four new cases fail on the unchanged implementation
+        run: |
+          set +e
+          uv run --project core pytest core/tests/test_janitor_worker_deepclean.py -k child_stat -q --junitxml=evidence/before.xml > evidence/before.log 2>&1
+          status=$?
+          set -e
+          cat evidence/before.log
+          test "$status" -eq 1
+          uv run --project core python - <<'PY'
+          import xml.etree.ElementTree as ET
+          root = ET.parse('evidence/before.xml').getroot()
+          cases = root.findall('.//testcase')
+          assert len(cases) == 4, len(cases)
+          assert all(c.find('failure') is not None for c in cases)
+          assert all('PermissionError' in ''.join(c.find('failure').itertext()) for c in cases)
+          assert not root.findall('.//error')
+          PY
+      - name: Apply the minimal child-probe correction and native formatting
+        run: |
+          uv run --project core python - <<'PY'
+          from pathlib import Path
+          path = Path('core/framework/maintenance/retention.py')
+          old = '''    targets: list[Path] = []
+              for sub in ("conversations", "data"):
+                  p = wdir / sub
+                  if p.exists():
+                      targets.append(p)
+              scan_complete = True
+          '''
+          new = '''    targets: list[Path] = []
+              scan_complete = True
+              for sub in ("conversations", "data"):
+                  p = wdir / sub
+                  try:
+                      if p.exists():
+                          targets.append(p)
+                  except OSError:
+                      # Child probes can fail just like the root enumeration below.
+                      scan_complete = False
+          '''
+          source = path.read_text(encoding='utf-8')
+          assert source.count(old) == 1
+          path.write_text(source.replace(old, new, 1), encoding='utf-8', newline='\n')
+          PY
+          uv run --project core ruff format core/framework/maintenance/retention.py core/tests/test_janitor_worker_deepclean.py > evidence/format.log 2>&1
+          cat evidence/format.log
+          uv run --project core ruff check core/framework/maintenance/retention.py core/tests/test_janitor_worker_deepclean.py > evidence/lint.log 2>&1
+          cat evidence/lint.log
+          uv run --project core ruff format --check core/framework/maintenance/retention.py core/tests/test_janitor_worker_deepclean.py >> evidence/format.log 2>&1
+          git diff --check
+      - name: Run the complete affected suite against the corrected implementation
+        run: |
+          uv run --project core pytest core/tests/test_janitor_worker_deepclean.py -q --junitxml=evidence/after.xml > evidence/after.log 2>&1
+          cat evidence/after.log
+          uv run --project core python -m compileall -q core/framework/maintenance/retention.py core/tests/test_janitor_worker_deepclean.py
+          git diff -- core/framework/maintenance/retention.py core/tests/test_janitor_worker_deepclean.py > evidence/change.patch
+          uv run --project core python - <<'PY'
+          import hashlib
+          import json
+          import platform
+          import subprocess
+          from pathlib import Path
+          files = {}
+          for source, dest in [('core/framework/maintenance/retention.py', 'retention.py'), ('core/tests/test_janitor_worker_deepclean.py', 'test_janitor_worker_deepclean.py')]:
+              data = Path(source).read_bytes()
+              Path('evidence', dest).write_bytes(data)
+              files[source] = {'artifact': dest, 'sha256': hashlib.sha256(data).hexdigest(), 'blob_sha': hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()}
+          manifest = {'parent': 'fa5903074f5f0c0417ce2081b47114b947c8fcc6', 'python': platform.python_version(), 'platform': platform.system(), 'files': files}
+          Path('evidence/manifest.json').write_text(json.dumps(manifest, indent=2), encoding='utf-8')
+          for command in [['uv', 'run', '--project', 'core', 'pytest', '--version'], ['uv', 'run', '--project', 'core', 'ruff', '--version']]:
+              with Path('evidence/versions.txt').open('a', encoding='utf-8') as output:
+                  subprocess.run(command, check=True, stdout=output)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: astra-r1-7425-${{ matrix.os }}
+          path: evidence/
+          retention-days: 7
+
+  stage-validated-commit:
+    name: Stage verified code objects without moving the contribution branch
+    needs: validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: astra-r1-7425-*
+          path: validated
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const crypto = require('crypto');
+            const dirs = ['validated/astra-r1-7425-ubuntu-latest', 'validated/astra-r1-7425-windows-latest'];
+            const manifests = dirs.map(d => JSON.parse(fs.readFileSync(`${d}/manifest.json`, 'utf8')));
+            const expected = 'fa5903074f5f0c0417ce2081b47114b947c8fcc6';
+            if (manifests.some(m => m.parent !== expected)) throw new Error('Unexpected parent');
+            const paths = ['core/framework/maintenance/retention.py', 'core/tests/test_janitor_worker_deepclean.py'];
+            const entries = [];
+            for (const path of paths) {
+              for (let i = 0; i < dirs.length; i++) {
+                const meta = manifests[i].files[path];
+                const data = fs.readFileSync(`${dirs[i]}/${meta.artifact}`);
+                if (crypto.createHash('sha256').update(data).digest('hex') !== meta.sha256) throw new Error('Artifact checksum mismatch');
+                if (meta.blob_sha !== manifests[0].files[path].blob_sha) throw new Error('Platform outputs differ');
+              }
+              const data = fs.readFileSync(`${dirs[0]}/${manifests[0].files[path].artifact}`);
+              const blob = await github.rest.git.createBlob({...context.repo, content: data.toString('base64'), encoding: 'base64'});
+              if (blob.data.sha !== manifests[0].files[path].blob_sha) throw new Error('Git blob mismatch');
+              entries.push({path, mode: '100644', type: 'blob', sha: blob.data.sha});
+            }
+            const parent = await github.rest.git.getCommit({...context.repo, commit_sha: expected});
+            const tree = await github.rest.git.createTree({...context.repo, base_tree: parent.data.tree.sha, tree: entries});
+            const commit = await github.rest.git.createCommit({...context.repo, tree: tree.data.sha, parents: [expected], message: 'fix(janitor): retain incomplete scans when child stat fails\n\nPreserve PR7425 review fixes and cover child-probe failures, sibling cleanup,\nindex cleanup and retry without rewriting existing tombstones.'});
+            const receipt = {parent: expected, commit: commit.data.sha, tree: tree.data.sha, files: entries, run_id: context.runId, branch_moved: false};
+            fs.writeFileSync('candidate.json', JSON.stringify(receipt, null, 2));
+            await core.summary.addHeading('Validated candidate; contribution branch unchanged').addCodeBlock(JSON.stringify(receipt, null, 2), 'json').write();
+            core.notice(`Validated candidate commit: ${commit.data.sha}`);
+      - uses: actions/upload-artifact@v4
+        with:
+          name: astra-r1-7425-candidate
+          path: candidate.json
+          retention-days: 7
