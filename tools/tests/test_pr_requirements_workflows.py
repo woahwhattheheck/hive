@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 
@@ -11,12 +12,27 @@ ISSUE_LOOKUP = "const { data: issue } = await github.rest.issues.get({"
 ASSIGNEE_LOOKUP = "const assigneeLogins ="
 PULL_REQUEST_GUARD = "if (issue.pull_request)"
 INVALID_REASON = "invalidReason: 'pull request, not an issue'"
+ISSUE_PATTERN = (
+    r"const issuePattern = /(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)?\s*#(\d+)(?!\w)/gi;"
+)
+UNFENCED_ISSUE_PATTERN = (
+    r"const issuePattern = /(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)?\s*#(\d+)/gi;"
+)
+REFERENCE_RE = re.compile(
+    r"(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)?\s*#(\d+)(?!\w)",
+    re.IGNORECASE,
+)
 
 
 def _policy_errors(text: str) -> list[str]:
     errors: list[str] = []
     lookup_offsets = []
     offset = 0
+
+    if text.count(ISSUE_PATTERN) != 1:
+        errors.append("issue reference parser lacks the numeric-suffix fence")
+    if UNFENCED_ISSUE_PATTERN in text:
+        errors.append("unfenced issue reference parser remains")
 
     while True:
         offset = text.find(ISSUE_LOOKUP, offset)
@@ -53,6 +69,10 @@ def _policy_errors(text: str) -> list[str]:
     return errors
 
 
+def _refs(text: str) -> list[int]:
+    return [int(match.group(1)) for match in REFERENCE_RE.finditer(text)]
+
+
 def test_pr_requirement_workflows_reject_pull_request_records() -> None:
     for relative_path in WORKFLOWS:
         text = (REPO_ROOT / relative_path).read_text(encoding="utf-8")
@@ -71,3 +91,37 @@ def test_policy_validator_rejects_a_removed_guard() -> None:
         errors = _policy_errors(mutated)
         if not any("no pull-request guard" in error for error in errors):
             raise AssertionError(f"validator accepted an unguarded lookup in {relative_path}")
+
+
+def test_issue_reference_parser_rejects_word_suffixes() -> None:
+    hostile = (
+        "see #42abc",
+        "see #42_a",
+        "see #42deadbeef",
+        "Fixes #42Z",
+    )
+    for text in hostile:
+        if _refs(text):
+            raise AssertionError(f"numeric-prefix issue reference was accepted: {text!r}")
+
+
+def test_issue_reference_parser_preserves_real_references() -> None:
+    controls = {
+        "Fixes #42": [42],
+        "closes #42.": [42],
+        "See (#42), then resolves #7": [42, 7],
+        "plain #123/notes": [123],
+    }
+    for text, expected in controls.items():
+        actual = _refs(text)
+        if actual != expected:
+            raise AssertionError(f"{text!r}: expected {expected}, got {actual}")
+
+
+def test_policy_validator_rejects_an_unfenced_issue_pattern() -> None:
+    for relative_path in WORKFLOWS:
+        text = (REPO_ROOT / relative_path).read_text(encoding="utf-8")
+        mutated = text.replace(ISSUE_PATTERN, UNFENCED_ISSUE_PATTERN, 1)
+        errors = _policy_errors(mutated)
+        if not any("numeric-suffix fence" in error for error in errors):
+            raise AssertionError(f"validator accepted an unfenced parser in {relative_path}")
