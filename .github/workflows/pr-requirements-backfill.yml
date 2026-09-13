@@ -83,6 +83,18 @@ jobs:
                     issue_number: issueNum,
                   });
 
+                  // The Issues API also returns pull requests. A PR reference must
+                  // never satisfy the policy that requires a real linked issue.
+                  if (issue.pull_request) {
+                    issuesWithoutAuthor.push({
+                      number: issueNum,
+                      assignees: [],
+                      invalidReason: 'pull request, not an issue'
+                    });
+                    console.log(`  Reference #${issueNum} is a pull request, not an issue`);
+                    continue;
+                  }
+
                   const assigneeLogins = (issue.assignees || []).map(a => a.login);
                   if (assigneeLogins.includes(prAuthor)) {
                     issueWithAuthorAssigned = issueNum;
@@ -100,7 +112,9 @@ jobs:
 
               if (!issueWithAuthorAssigned) {
                 const issueList = issuesWithoutAuthor.map(i =>
-                  `#${i.number} (assignees: ${i.assignees.length > 0 ? i.assignees.join(', ') : 'none'})`
+                  i.invalidReason
+                    ? `#${i.number} (${i.invalidReason})`
+                    : `#${i.number} (assignees: ${i.assignees.length > 0 ? i.assignees.join(', ') : 'none'})`
                 ).join(', ');
 
                 console.log(`  ❌ PR author not assigned to any linked issue - closing PR`);
