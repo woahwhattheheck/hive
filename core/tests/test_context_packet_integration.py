@@ -5,7 +5,10 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from framework.orchestrator.context import build_node_context_from_graph_context
-from framework.orchestrator.context_packet import MissingRequiredContextError
+from framework.orchestrator.context_packet import (
+    ContextPacketConfigurationError,
+    MissingRequiredContextError,
+)
 
 
 class FakeBuffer:
@@ -73,9 +76,10 @@ class ContextPacketIntegrationTests(unittest.TestCase):
         with patch("framework.orchestrator.context.build_node_context", side_effect=lambda **payload: payload):
             return build_node_context_from_graph_context(gc, node_spec=spec, **kwargs)
 
-    def test_opt_in_packet_is_injected_into_input_and_narrative(self):
+    def test_opt_in_packet_is_injected_into_input_and_narrative_when_key_is_authorized(self):
         gc = self.graph_context({"task": "write", "buyer_requirements": {"format": "PDF"}})
         spec = self.node_spec(
+            input_keys=["task", "buyer_requirements"],
             context_keys=["buyer_requirements"],
             context_required_keys=["buyer_requirements"],
             context_char_budget=1000,
@@ -90,9 +94,22 @@ class ContextPacketIntegrationTests(unittest.TestCase):
         self.assertIn("Context Packet (bounded handoff)", built["narrative"])
         self.assertFalse(built["derive_input_data_from_buffer"])
 
+    def test_context_packet_cannot_expand_node_buffer_read_authority(self):
+        gc = self.graph_context({"task": "write", "private_record": {"must": "not leak"}})
+        spec = self.node_spec(
+            input_keys=["task"],
+            context_keys=["private_record"],
+            context_required_keys=["private_record"],
+        )
+
+        with patch("framework.orchestrator.context.build_node_context") as mocked:
+            with self.assertRaises(ContextPacketConfigurationError):
+                build_node_context_from_graph_context(gc, node_spec=spec)
+            mocked.assert_not_called()
+
     def test_packet_prepends_without_destroying_existing_narrative(self):
         gc = self.graph_context({"brief": "bounded"})
-        spec = self.node_spec(context_keys=["brief"])
+        spec = self.node_spec(input_keys=["brief"], context_keys=["brief"])
 
         built = self.capture_build(gc, spec, narrative="existing execution narrative")
 
@@ -109,9 +126,10 @@ class ContextPacketIntegrationTests(unittest.TestCase):
         self.assertTrue(built["derive_input_data_from_buffer"])
         self.assertEqual(built["narrative"], "")
 
-    def test_missing_required_context_aborts_before_node_build(self):
+    def test_missing_required_authorized_context_aborts_before_node_build(self):
         gc = self.graph_context({"task": "write"})
         spec = self.node_spec(
+            input_keys=["task", "source_ledger"],
             context_keys=["source_ledger"],
             context_required_keys=["source_ledger"],
         )
