@@ -59,7 +59,6 @@ lint.select = [
 # still fail closed. Delete each entry as its source cleanup lands.
 lint.per-file-ignores."demos/*" = ["E501"]
 lint.per-file-ignores."framework/agent_loop/agent_loop.py" = ["UP041"]
-lint.per-file-ignores."framework/agents/queen/recall_selector.py" = ["I001"]
 lint.per-file-ignores."framework/llm/litellm.py" = ["I001"]
 lint.per-file-ignores."framework/server/queen_orchestrator.py" = ["I001"]
 lint.per-file-ignores."framework/server/routes_config.py" = ["F401"]
