@@ -8,6 +8,7 @@ jobs:
   check-pr:
     # Only trusted repository participants may run this write-capable command.
     if: >-
+      github.event.repository.has_issues != false &&
       github.event.issue.pull_request &&
       startsWith(github.event.comment.body, '/check') &&
       (
@@ -141,7 +142,7 @@ jobs:
                     number: issueNum,
                     assignees: assigneeLogins
                   });
-                  console.log(`  Issue #${issueNum} assignees: ${assigneeLogins.length > 0 ? assigneeLogins.join(', ') : 'none'}`);
+                  console.log(`  Issue #${issueNum} assignees: ${assigneeLogins.length > 0 ? assigneeLogins.join(', ') : 'none'} (PR author: ${prAuthor})`);
                 }
               } catch (error) {
                 console.log(`  Issue #${issueNum} not found`);

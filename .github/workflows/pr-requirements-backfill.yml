@@ -5,6 +5,7 @@ on:
 
 jobs:
   check-all-open-prs:
+    if: github.event.repository.has_issues != false
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
