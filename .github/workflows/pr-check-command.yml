@@ -6,14 +6,20 @@ on:
 
 jobs:
   check-pr:
-    # Only run on PR comments that start with /check
-    if: github.event.issue.pull_request && startsWith(github.event.comment.body, '/check')
+    # Only trusted repository participants may run this write-capable command.
+    if: >-
+      github.event.issue.pull_request &&
+      startsWith(github.event.comment.body, '/check') &&
+      (
+        github.event.comment.author_association == 'OWNER' ||
+        github.event.comment.author_association == 'MEMBER' ||
+        github.event.comment.author_association == 'COLLABORATOR'
+      )
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
       issues: write
       checks: write
-      statuses: write
 
     steps:
       - name: Check PR requirements
