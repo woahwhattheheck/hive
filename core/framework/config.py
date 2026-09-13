@@ -211,7 +211,15 @@ def get_hive_config() -> dict[str, Any]:
         return {}
     try:
         with open(HIVE_CONFIG_FILE, encoding="utf-8-sig") as f:
-            return json.load(f)
+            config = json.load(f)
+        if not isinstance(config, dict):
+            logger.warning(
+                "Hive config %s must contain a JSON object, got %s",
+                HIVE_CONFIG_FILE,
+                type(config).__name__,
+            )
+            return {}
+        return config
     except (json.JSONDecodeError, OSError) as e:
         logger.warning(
             "Failed to load Hive config %s: %s",
