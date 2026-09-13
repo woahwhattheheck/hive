@@ -2,8 +2,9 @@
 
 Context packets are deliberately deterministic and non-generative: the
 framework selects explicitly named shared-buffer keys, admits whole JSON
-values under a budget, hashes every admitted/omitted serializable value, and
-binds the packet to the worker + goal. No LLM summarization happens here.
+values under a worker-facing render budget, hashes every admitted/omitted
+serializable value, and binds the packet to the worker + goal. No LLM
+summarization happens here.
 """
 
 from __future__ import annotations
@@ -11,6 +12,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+from collections import Counter
 from dataclasses import dataclass
 from typing import Any, Mapping, Sequence
 
@@ -58,7 +60,7 @@ class ContextPacketSerializationError(ContextPacketError):
 
 
 class SensitiveContextKeyError(ContextPacketError):
-    """Raised when a required key looks like credential material."""
+    """Raised when required context contains a credential-like mapping key."""
 
 
 def _sha256(text: str) -> str:
@@ -89,13 +91,61 @@ def _dedupe(values: Sequence[str]) -> tuple[str, ...]:
     return tuple(result)
 
 
+def _normalize_key_name(key: str) -> str:
+    """Normalize snake/kebab/camel/Pascal key names for secret screening."""
+
+    # ``accessToken`` -> ``access_Token`` and ``APIKey`` -> ``API_Key``.
+    split_camel = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", key)
+    split_acronym = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1_\2", split_camel)
+    return re.sub(r"[^a-z0-9]+", "_", split_acronym.casefold()).strip("_")
+
+
 def _sensitive_key(key: str) -> bool:
-    normalized = re.sub(r"[^a-z0-9]+", "_", key.casefold()).strip("_")
+    normalized = _normalize_key_name(key)
     if normalized in _SENSITIVE_KEY_PARTS:
         return True
     parts = normalized.split("_") if normalized else []
     joined_pairs = {"_".join(parts[i : i + 2]) for i in range(max(0, len(parts) - 1))}
     return bool(_SENSITIVE_KEY_PARTS.intersection(parts) or _SENSITIVE_KEY_PARTS.intersection(joined_pairs))
+
+
+def _find_sensitive_mapping_key(value: Any, path: str = "$", seen: set[int] | None = None) -> str | None:
+    """Return the first credential-like mapping-key path in a JSON-like value.
+
+    Values are never inspected for credential *content*. The boundary is
+    intentionally key-name based so generic prose is not heuristically
+    classified as a secret.
+    """
+
+    if seen is None:
+        seen = set()
+
+    if isinstance(value, dict):
+        object_id = id(value)
+        if object_id in seen:
+            return None
+        seen.add(object_id)
+        for raw_key, child in value.items():
+            key = str(raw_key)
+            child_path = f"{path}.{key}"
+            if _sensitive_key(key):
+                return child_path
+            nested = _find_sensitive_mapping_key(child, child_path, seen)
+            if nested is not None:
+                return nested
+        return None
+
+    if isinstance(value, (list, tuple)):
+        object_id = id(value)
+        if object_id in seen:
+            return None
+        seen.add(object_id)
+        for index, child in enumerate(value):
+            nested = _find_sensitive_mapping_key(child, f"{path}[{index}]", seen)
+            if nested is not None:
+                return nested
+
+    return None
 
 
 @dataclass(frozen=True, slots=True)
@@ -174,6 +224,73 @@ class ContextPacket:
         return payload
 
 
+def _build_packet_object(
+    *,
+    node_id: str,
+    node_name: str,
+    goal_sha256: str,
+    requested: tuple[str, ...],
+    required: tuple[str, ...],
+    budget_chars: int,
+    entries: Sequence[ContextPacketEntry],
+    omission_by_key: Mapping[str, ContextPacketOmission],
+) -> ContextPacket:
+    omissions = tuple(omission_by_key[key] for key in requested if key in omission_by_key)
+    payload_chars = sum(entry.chars for entry in entries)
+    body = {
+        "version": PACKET_VERSION,
+        "node_id": str(node_id),
+        "node_name": str(node_name),
+        "goal_sha256": goal_sha256,
+        "requested_keys": list(requested),
+        "required_keys": list(required),
+        "budget_chars": int(budget_chars),
+        "payload_chars": payload_chars,
+        "entries": [entry.to_dict() for entry in entries],
+        "omissions": [omission.to_dict() for omission in omissions],
+    }
+    return ContextPacket(
+        node_id=str(node_id),
+        node_name=str(node_name),
+        goal_sha256=goal_sha256,
+        requested_keys=requested,
+        required_keys=required,
+        budget_chars=int(budget_chars),
+        payload_chars=payload_chars,
+        entries=tuple(entries),
+        omissions=omissions,
+        packet_sha256=_sha256(_canonical_json(body)),
+    )
+
+
+def _render_context_packet_text(packet: ContextPacket) -> str:
+    """Render prompt-safe packet text without performing the budget assertion."""
+
+    # Canonical JSON is used for entry rendering so context key names and string
+    # values cannot create new prompt lines or delimiters via embedded controls.
+    entries_json = _canonical_json([entry.to_dict() for entry in packet.entries])
+    reason_counts = dict(sorted(Counter(omission.reason for omission in packet.omissions).items()))
+    omissions_summary = _canonical_json({"count": len(packet.omissions), "reasons": reason_counts})
+
+    return "\n".join(
+        [
+            "--- Context Packet (bounded handoff) ---",
+            f"version: {packet.version}",
+            f"packet_sha256: {packet.packet_sha256}",
+            f"goal_sha256: {packet.goal_sha256}",
+            f"render_budget_chars: {packet.budget_chars}",
+            f"payload_chars: {packet.payload_chars}",
+            "entries_json: " + entries_json,
+            "omissions_summary: " + omissions_summary,
+            (
+                "Use only supplied entry values as facts from this packet. "
+                "Detailed omission metadata is programmatic; omission hashes prove identity, not content."
+            ),
+            "--- End Context Packet ---",
+        ]
+    )
+
+
 def build_context_packet(
     *,
     node_id: str,
@@ -184,11 +301,11 @@ def build_context_packet(
     required_keys: Sequence[str] = (),
     budget_chars: int = DEFAULT_CONTEXT_BUDGET_CHARS,
 ) -> ContextPacket:
-    """Build a deterministic, bounded packet from explicitly selected values.
+    """Build a deterministic packet under a hard worker-facing render budget.
 
-    Required keys are admitted before optional keys so optional material cannot
-    crowd out a requirement. Optional entries are admitted whole or omitted;
-    values are never truncated into a different fact.
+    Required keys are admitted before optional keys. Optional entries retain
+    declaration order as priority and are admitted whole or omitted whole.
+    Credential-like mapping keys are fenced recursively before serialization.
     """
 
     requested = _dedupe(context_keys)
@@ -205,23 +322,34 @@ def build_context_packet(
 
     required_set = set(required)
     admission_order = list(required) + [key for key in requested if key not in required_set]
-    entries: list[ContextPacketEntry] = []
-    omissions: list[ContextPacketOmission] = []
-    payload_chars = 0
+    required_entries: list[ContextPacketEntry] = []
+    optional_entries: list[ContextPacketEntry] = []
+    omission_by_key: dict[str, ContextPacketOmission] = {}
 
     for key in admission_order:
         is_required = key in required_set
 
         if _sensitive_key(key):
             if is_required:
-                raise SensitiveContextKeyError(f"required context key '{key}' is credential-like and cannot be packetized")
-            omissions.append(ContextPacketOmission(key=key, reason="sensitive_key"))
+                raise SensitiveContextKeyError(
+                    f"required context key '{key}' is credential-like and cannot be packetized"
+                )
+            omission_by_key[key] = ContextPacketOmission(key=key, reason="sensitive_key")
             continue
 
         if key not in values:
             if is_required:
                 raise MissingRequiredContextError(f"required context key '{key}' is missing")
-            omissions.append(ContextPacketOmission(key=key, reason="missing"))
+            omission_by_key[key] = ContextPacketOmission(key=key, reason="missing")
+            continue
+
+        sensitive_path = _find_sensitive_mapping_key(values[key])
+        if sensitive_path is not None:
+            if is_required:
+                raise SensitiveContextKeyError(
+                    f"required context key '{key}' contains credential-like mapping key at {sensitive_path}"
+                )
+            omission_by_key[key] = ContextPacketOmission(key=key, reason="sensitive_key")
             continue
 
         try:
@@ -229,63 +357,85 @@ def build_context_packet(
         except ContextPacketSerializationError:
             if is_required:
                 raise ContextPacketSerializationError(f"required context key '{key}' is not canonical JSON")
-            omissions.append(ContextPacketOmission(key=key, reason="non_json"))
+            omission_by_key[key] = ContextPacketOmission(key=key, reason="non_json")
             continue
 
-        chars = len(canonical)
-        digest = _sha256(canonical)
-        if payload_chars + chars > budget_chars:
-            if is_required:
-                raise ContextPacketBudgetError(
-                    f"required context key '{key}' ({chars} chars) does not fit remaining packet budget "
-                    f"({budget_chars - payload_chars} chars)"
-                )
-            omissions.append(
-                ContextPacketOmission(
-                    key=key,
-                    reason="budget",
-                    sha256=digest,
-                    chars=chars,
-                )
-            )
-            continue
-
-        entries.append(
-            ContextPacketEntry(
-                key=key,
-                canonical_json=canonical,
-                sha256=digest,
-                chars=chars,
-            )
+        entry = ContextPacketEntry(
+            key=key,
+            canonical_json=canonical,
+            sha256=_sha256(canonical),
+            chars=len(canonical),
         )
-        payload_chars += chars
+        if is_required:
+            required_entries.append(entry)
+        else:
+            optional_entries.append(entry)
+            # Start optional serializable values as budget omissions, then
+            # promote them one-by-one in priority order if the complete prompt
+            # still fits. This makes the configured budget a real render bound.
+            omission_by_key[key] = ContextPacketOmission(
+                key=key,
+                reason="budget",
+                sha256=entry.sha256,
+                chars=entry.chars,
+            )
 
-    body = {
-        "version": PACKET_VERSION,
-        "node_id": str(node_id),
-        "node_name": str(node_name),
-        "goal_sha256": _sha256(str(goal_context)),
-        "requested_keys": list(requested),
-        "required_keys": list(required),
-        "budget_chars": int(budget_chars),
-        "payload_chars": payload_chars,
-        "entries": [entry.to_dict() for entry in entries],
-        "omissions": [omission.to_dict() for omission in omissions],
-    }
-    packet_sha256 = _sha256(_canonical_json(body))
+    goal_sha256 = _sha256(str(goal_context))
 
-    return ContextPacket(
-        node_id=str(node_id),
-        node_name=str(node_name),
-        goal_sha256=body["goal_sha256"],
-        requested_keys=requested,
-        required_keys=required,
-        budget_chars=int(budget_chars),
-        payload_chars=payload_chars,
-        entries=tuple(entries),
-        omissions=tuple(omissions),
-        packet_sha256=packet_sha256,
+    packet = _build_packet_object(
+        node_id=node_id,
+        node_name=node_name,
+        goal_sha256=goal_sha256,
+        requested=requested,
+        required=required,
+        budget_chars=budget_chars,
+        entries=required_entries,
+        omission_by_key=omission_by_key,
     )
+    required_render_chars = len(_render_context_packet_text(packet))
+    if required_render_chars > budget_chars:
+        raise ContextPacketBudgetError(
+            "required context plus packet envelope does not fit render budget "
+            f"({required_render_chars} > {budget_chars} chars)"
+        )
+
+    admitted_entries = list(required_entries)
+    for entry in optional_entries:
+        trial_entries = [*admitted_entries, entry]
+        trial_omissions = dict(omission_by_key)
+        trial_omissions.pop(entry.key, None)
+        trial_packet = _build_packet_object(
+            node_id=node_id,
+            node_name=node_name,
+            goal_sha256=goal_sha256,
+            requested=requested,
+            required=required,
+            budget_chars=budget_chars,
+            entries=trial_entries,
+            omission_by_key=trial_omissions,
+        )
+        if len(_render_context_packet_text(trial_packet)) <= budget_chars:
+            admitted_entries = trial_entries
+            omission_by_key = trial_omissions
+
+    packet = _build_packet_object(
+        node_id=node_id,
+        node_name=node_name,
+        goal_sha256=goal_sha256,
+        requested=requested,
+        required=required,
+        budget_chars=budget_chars,
+        entries=admitted_entries,
+        omission_by_key=omission_by_key,
+    )
+    rendered_chars = len(_render_context_packet_text(packet))
+    if rendered_chars > budget_chars:
+        # Defensive invariant: the admission loop above should make this
+        # unreachable, but fail closed rather than emitting an oversized prompt.
+        raise ContextPacketBudgetError(
+            f"context packet render exceeds configured budget ({rendered_chars} > {budget_chars} chars)"
+        )
+    return packet
 
 
 def build_node_context_packet(*, node_spec: Any, buffer: Any, goal_context: str) -> ContextPacket | None:
@@ -320,33 +470,11 @@ def build_node_context_packet(*, node_spec: Any, buffer: Any, goal_context: str)
 
 
 def render_context_packet(packet: ContextPacket) -> str:
-    """Render a compact worker-facing prompt block."""
+    """Render a prompt-safe packet and assert its configured hard bound."""
 
-    lines = [
-        "--- Context Packet (bounded handoff) ---",
-        f"version: {packet.version}",
-        f"packet_sha256: {packet.packet_sha256}",
-        f"goal_sha256: {packet.goal_sha256}",
-        f"payload_chars: {packet.payload_chars}/{packet.budget_chars}",
-        "Use only supplied entry values as facts from this packet; omission hashes prove identity, not content.",
-    ]
-
-    if packet.entries:
-        lines.append("entries:")
-        for entry in packet.entries:
-            lines.append(f"- {entry.key} [sha256={entry.sha256}; chars={entry.chars}]: {entry.canonical_json}")
-    else:
-        lines.append("entries: []")
-
-    if packet.omissions:
-        lines.append("omissions:")
-        for omission in packet.omissions:
-            metadata = [f"reason={omission.reason}"]
-            if omission.sha256 is not None:
-                metadata.append(f"sha256={omission.sha256}")
-            if omission.chars is not None:
-                metadata.append(f"chars={omission.chars}")
-            lines.append(f"- {omission.key} [{'; '.join(metadata)}]")
-
-    lines.append("--- End Context Packet ---")
-    return "\n".join(lines)
+    rendered = _render_context_packet_text(packet)
+    if len(rendered) > packet.budget_chars:
+        raise ContextPacketBudgetError(
+            f"context packet render exceeds configured budget ({len(rendered)} > {packet.budget_chars} chars)"
+        )
+    return rendered
