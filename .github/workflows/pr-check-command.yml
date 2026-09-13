@@ -52,7 +52,7 @@ jobs:
             });
 
             // Extract issue numbers
-            const issuePattern = /(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)?\s*#(\d+)/gi;
+            const issuePattern = /(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)?\s*#(\d+)(?!\w)/gi;
             const allText = `${prTitle} ${prBody}`;
             const matches = [...allText.matchAll(issuePattern)];
             const issueNumbers = [...new Set(matches.map(m => parseInt(m[1], 10)))];
@@ -141,7 +141,7 @@ jobs:
                     number: issueNum,
                     assignees: assigneeLogins
                   });
-                  console.log(`  Issue #${issueNum} assignees: ${assigneeLogins.length > 0 ? assigneeLogins.join(', ') : 'none'}`);
+                  console.log(`  Issue #${issueNum} assignees: ${assigneeLogins.length > 0 ? assigneeLogins.join(', ') : 'none'} (PR author: ${prAuthor})`);
                 }
               } catch (error) {
                 console.log(`  Issue #${issueNum} not found`);
