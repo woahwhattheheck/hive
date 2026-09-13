@@ -57,7 +57,8 @@ def test_pr_requirement_workflows_reject_pull_request_records() -> None:
     for relative_path in WORKFLOWS:
         text = (REPO_ROOT / relative_path).read_text(encoding="utf-8")
         errors = _policy_errors(text)
-        assert errors == [], f"{relative_path}: {'; '.join(errors)}"
+        if errors:
+            raise AssertionError(f"{relative_path}: {'; '.join(errors)}")
 
 
 def test_policy_validator_rejects_a_removed_guard() -> None:
@@ -68,4 +69,5 @@ def test_policy_validator_rejects_a_removed_guard() -> None:
         mutated = text[:guard_offset] + text[assignee_offset:]
 
         errors = _policy_errors(mutated)
-        assert any("no pull-request guard" in error for error in errors), relative_path
+        if not any("no pull-request guard" in error for error in errors):
+            raise AssertionError(f"validator accepted an unguarded lookup in {relative_path}")
