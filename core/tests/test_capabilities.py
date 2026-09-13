@@ -117,7 +117,7 @@ class TestSupportsImagesInToolResults:
     """Which APIs carry an image inside a tool-role message.
 
     Distinct from ``supports_image_tool_results`` (can the model see images
-    at all): a vision-capable OpenAI model still needs its screenshots
+    at all): a vision-capable OpenAI-compatible API still needs its screenshots
     hoisted into a user message, because the tool result drops them.
     """
 
@@ -126,7 +126,6 @@ class TestSupportsImagesInToolResults:
         [
             "anthropic/claude-opus-4-6",
             "claude-sonnet-4-5-20250929",
-            "openrouter/anthropic/claude-sonnet-4.6",
             # Anthropic-compatible proxies, rewritten to anthropic/ downstream
             "hive/claude-opus-4-6",
             "kimi/kimi-k2.6",
@@ -140,11 +139,14 @@ class TestSupportsImagesInToolResults:
     @pytest.mark.parametrize(
         "model",
         [
-            # The regression: vision-capable, but silently drops tool-result
-            # images, so the agent reports it cannot see its own screenshot.
+            # Vision-capable, but these APIs need image content hoisted into a
+            # user message instead of embedded in a tool result.
             "openai/gpt-6-astra",
             "gpt-5.5",
             "openrouter/openai/gpt-5.4",
+            # The underlying model being Anthropic does not change OpenRouter's
+            # OpenAI-compatible transport shape.
+            "openrouter/anthropic/claude-sonnet-4.6",
             "gemini/gemini-3-flash-preview",
             "azure/gpt-5",
         ],
