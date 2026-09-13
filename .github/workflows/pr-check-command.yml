@@ -141,7 +141,7 @@ jobs:
                     number: issueNum,
                     assignees: assigneeLogins
                   });
-                  console.log(`  Issue #${issueNum} assignees: ${assigneeLogins.length > 0 ? assigneeLogins.join(', ') : 'none'} (PR author: ${prAuthor})`);
+                  console.log(`  Issue #${issueNum} assignees: ${assigneeLogins.length > 0 ? assigneeLogins.join(', ') : 'none'}`);
                 }
               } catch (error) {
                 console.log(`  Issue #${issueNum} not found`);
