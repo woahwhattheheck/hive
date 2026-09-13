@@ -14,6 +14,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import Any
 
+from framework.orchestrator.context_packet import build_node_context_packet, render_context_packet
 from framework.orchestrator.edge import GraphSpec
 from framework.orchestrator.goal import Goal
 from framework.orchestrator.node import DataBuffer, NodeContext, NodeProtocol, NodeSpec
@@ -314,6 +315,25 @@ def build_node_context_from_graph_context(
     if resolved_output_keys is None and gc.is_continuous:
         resolved_output_keys = list(gc.cumulative_output_keys)
 
+    resolved_input_data = input_data
+    resolved_derive_input_data = derive_input_data_from_buffer
+    resolved_narrative = narrative
+
+    context_packet = build_node_context_packet(
+        node_spec=node_spec,
+        buffer=gc.buffer,
+        goal_context=gc.goal.to_prompt_context(),
+    )
+    if context_packet is not None:
+        if resolved_input_data is None and derive_input_data_from_buffer:
+            resolved_input_data = _derive_input_data(gc.buffer, node_spec.input_keys)
+            resolved_derive_input_data = False
+        else:
+            resolved_input_data = dict(resolved_input_data or {})
+        resolved_input_data["_context_packet"] = context_packet.to_dict()
+        packet_prompt = render_context_packet(context_packet)
+        resolved_narrative = f"{packet_prompt}\n\n{narrative}" if narrative else packet_prompt
+
     return build_node_context(
         runtime=gc.runtime,
         node_spec=node_spec,
@@ -322,8 +342,8 @@ def build_node_context_from_graph_context(
         llm=gc.llm,
         tools=gc.tools,
         max_tokens=gc.graph.max_tokens,
-        input_data=input_data,
-        derive_input_data_from_buffer=derive_input_data_from_buffer,
+        input_data=resolved_input_data,
+        derive_input_data_from_buffer=resolved_derive_input_data,
         runtime_logger=gc.runtime_logger,
         pause_event=pause_event,
         continuous_mode=gc.is_continuous,
@@ -336,7 +356,7 @@ def build_node_context_from_graph_context(
         tool_provider_map=gc.tool_provider_map,
         fallback_to_default_accounts_prompt=fallback_to_default_accounts_prompt,
         identity_prompt=identity_prompt if identity_prompt is not None else getattr(gc.graph, "identity_prompt", "") or "",
-        narrative=narrative,
+        narrative=resolved_narrative,
         execution_id=gc.execution_id,
         run_id=gc.run_id,
         stream_id=gc.stream_id,
