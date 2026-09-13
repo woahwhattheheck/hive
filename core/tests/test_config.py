@@ -22,6 +22,20 @@ class TestGetHiveConfig:
         assert "Failed to load Hive config" in caplog.text
         assert str(config_file) in caplog.text
 
+    def test_logs_warning_on_non_object_json(self, tmp_path, monkeypatch, caplog):
+        """Valid JSON with the wrong top-level shape fails closed to an empty mapping."""
+        config_file = tmp_path / "configuration.json"
+        config_file.write_text("[]", encoding="utf-8")
+
+        monkeypatch.setattr("framework.config.HIVE_CONFIG_FILE", config_file)
+
+        with caplog.at_level(logging.WARNING):
+            result = get_hive_config()
+
+        assert result == {}
+        assert "must contain a JSON object" in caplog.text
+        assert str(config_file) in caplog.text
+
 
 class TestOpenRouterConfig:
     """OpenRouter config composition and fallback behavior."""
