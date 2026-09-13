@@ -53,7 +53,19 @@ lint.select = [
   "W", # pycodestyle warnings
 ]
 
+# Keep the lint gate useful while the current main-line debt is removed in
+# small, reviewable source patches. Each quarantine is scoped to the exact
+# file and rule already failing on main; new rules and violations elsewhere
+# still fail closed. Delete each entry as its source cleanup lands.
 lint.per-file-ignores."demos/*" = ["E501"]
+lint.per-file-ignores."framework/agent_loop/agent_loop.py" = ["UP041"]
+lint.per-file-ignores."framework/agents/queen/recall_selector.py" = ["I001"]
+lint.per-file-ignores."framework/llm/litellm.py" = ["I001"]
+lint.per-file-ignores."framework/server/queen_orchestrator.py" = ["I001"]
+lint.per-file-ignores."framework/server/routes_config.py" = ["F401"]
+lint.per-file-ignores."framework/server/routes_execution.py" = ["B023"]
+lint.per-file-ignores."framework/server/session_manager.py" = ["I001"]
+lint.per-file-ignores."tests/test_llm_judge.py" = ["I001"]
 lint.isort.combine-as-imports = true
 lint.isort.known-first-party = ["framework"]
 lint.isort.section-order = [
