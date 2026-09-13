@@ -48,16 +48,17 @@ def filter_tools_for_model(tools: list[Tool], model: str) -> tuple[list[Tool], l
     return kept, hidden
 
 
-# Model prefixes routed to the Anthropic Messages API — the one API we
-# speak whose tool-result block can itself hold images. ``kimi/`` and
+# Model prefixes routed directly to the Anthropic Messages API — the one API
+# we speak whose tool-result block can itself hold images. ``kimi/`` and
 # ``hive/`` are Anthropic-compatible proxies that ``rewrite_proxy_model``
-# turns into ``anthropic/`` before the request goes out.
+# turns into ``anthropic/`` before the request goes out. OpenRouter is
+# intentionally absent: even when its underlying model is Anthropic, Hive
+# sends the request through OpenRouter's OpenAI-compatible API surface.
 _ANTHROPIC_ROUTED_PREFIXES = (
     "anthropic/",
     "claude-",
     "kimi/",
     "hive/",
-    "openrouter/anthropic/",
 )
 
 
@@ -67,10 +68,10 @@ def supports_images_in_tool_results(model: str) -> bool:
     Anthropic's ``tool_result`` content can hold image blocks, so a
     screenshot rides along with the tool result that produced it. No other
     API we speak does: OpenAI chat completions (and every OpenAI-compatible
-    proxy) and Gemini's ``functionResponse`` carry text there and drop image
-    parts *silently* — no 400, no warning, just a model that insists it
-    cannot see the screenshot it just took. Which is accurate: nothing
-    reached it.
+    proxy, including OpenRouter) and Gemini's ``functionResponse`` carry text
+    there and drop image parts *silently* — no 400, no warning, just a model
+    that insists it cannot see the screenshot it just took. Which is accurate:
+    nothing reached it.
 
     Callers getting ``False`` should move the images into a following
     ``user`` message — see ``NodeConversation._hoist_tool_result_images``.
