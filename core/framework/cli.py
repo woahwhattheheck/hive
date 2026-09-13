@@ -26,21 +26,20 @@ from pathlib import Path
 
 
 def _configure_paths() -> None:
-    """Auto-configure sys.path so the framework is importable from any cwd.
+    """Add the repository ``core/`` to ``sys.path`` when running from source.
 
-    Walks up from this file to find the project root, then ensures
-    `core/` is on sys.path so `framework.*` imports resolve when the
-    package isn't installed via `pip install -e .`.
+    The import root must come only from this module's own location. Falling
+    back to the current working directory would let an unrelated ``./core``
+    tree take precedence over the installed framework package.
     """
     framework_dir = Path(__file__).resolve().parent  # core/framework/
     core_dir = framework_dir.parent  # core/
-    project_root = core_dir.parent  # project root
 
-    if not (project_root / "core").is_dir():
-        project_root = Path.cwd()
+    if framework_dir.name != "framework" or core_dir.name != "core":
+        return
 
-    core_str = str(project_root / "core")
-    if (project_root / "core").is_dir() and core_str not in sys.path:
+    core_str = str(core_dir)
+    if core_str not in sys.path:
         sys.path.insert(0, core_str)
 
 
