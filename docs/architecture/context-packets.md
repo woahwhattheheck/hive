@@ -22,7 +22,7 @@ They are deliberately **non-generative**. The dispatcher does not ask an LLM to 
 
 `context_keys` is ordered: required keys are admitted first, then optional keys retain declaration order as their priority. With no `context_keys`, packet dispatch is disabled and behavior is unchanged.
 
-For a node with explicit `input_keys`, every `context_key` must already be inside the node's effective shared-buffer read authority. Packet selection cannot be used as a second path around scoped-buffer permissions. Existing framework-managed `_` keys remain available where the scoped buffer already exposes them. Nodes whose existing DataBuffer contract has no read allow-set keep that existing unrestricted-read behavior; context packets do not silently change DataBuffer semantics.
+For a node with explicit `input_keys`, every `context_key` must already be in that exact allow-set. Packet selection cannot be used as a second path around scoped-buffer permissions, and naming a key with a leading underscore does not create framework provenance or read authority. A framework metadata key remains available only when it is explicitly present in `input_keys`. Nodes whose existing DataBuffer contract has an empty read allow-set keep that existing unrestricted-read behavior; context packets do not silently change DataBuffer semantics.
 
 Two independent size controls apply:
 
