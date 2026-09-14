@@ -1,0 +1,133 @@
+diff --git a/tools/src/terminal_tools/common/__pycache__/command_guard.cpython-313.pyc b/tools/src/terminal_tools/common/__pycache__/command_guard.cpython-313.pyc
+index 917f31461e8e43ea01239e131f3af198add5aa46..07b95713b0490178a61566259cca56f2f97e0274 100644
+GIT binary patch
+delta 1290
+zcmZuw-*3}a6!y(;$8l`OG_-YTOBdQWX;L6vH&|I2tO)3;Rv1lay~T@zx3(m4Wd~`q
+zQqjF_dm+pZRC}2E#L5E_T3>kGKQQGnswNF-`vWWmiC2zqTQ8fqQqDQ|eBb%bxyQ<r
+z>>tH!mu2G=obFG*ZrmB8sK33-@fkb}Q1`ds<Ls4$!k7sqVX`=QYv}QdlXN6Wl>%@X
+zc1DpDO-_3;0DS_7V@XQku}28`1i>eWDGyRaLgPx|cTm_9I0}@$QqTv}emyjx0X+G?
+z2K_!^fWvVh43IX1gv^zqzLMk<M|z1vH~~ecFbj6LMEmp+pZ-BFeU#8o6ZJ7t^d7Mp
+zk~u@{cuDYOCVUwtOD6w!cd`$$IWlv;=iQS&C~}w~@Ag*Hv$s5~W|}d1rGN#cI00Wx
+znKDyKNjW=6ZG=owIj5YT3YaIp4$9N}so<N?OeQ;b5o=(+GEBW(St}UYhF)njkFGM-
+znrCF2_gERVi8GtldPA@6M`M4XFXvY7;`&G9t2qyqu|@m}Bv(l~58lejbGQiZ{(7|v
+z4riOVd0b}4{3zvN|KZ8@1?Lxf^5L>+RCLQKE`We+r;aOnRK|{TFh-%K*EHR%muot<
+z@}#NO#F{;VwL{hxnYOTA-+a(Gd@AtdxdYU+d2fcJ;eZBJVXURSY7T3Ff&9wWYBM9t
+z_GNE0@tR@Idn;QaD;u>M#^(M%^qVkx?)=H!j(C43GvdtfmnL`!tq_<|I3^3h0b5zq
+zEBDokQLB~f_e=?LPo1Cn2J1y;8jKt=`yELrpg!k@@NJq=mlgHe(yjSVu3kTgd6yfv
+z=NFydh4jscC&;O4xn4IK<;J>Ew^WsA5Z!|)K-H?MKBLSbPn`@9o2?o59#r*@%_+zs
+z_*u^a&gs;pcqjS(Hq&8-w`2QvQw(}IPSMPx_>b`pC$uJ713S6hFLpn3slYkul{CIn
+z*!|{3Y|n0ASa8Dub`iM|isc?H{;=4k!*twDQ1qwBm6G9z`%azq*()7h`hE-aPKmEX
+zsg-LF&Az<z@@9wQTm7wgd+>aI@A}?FmqIgQ=MbNCnJ`-f>7zzm3>u{<df}*1#@P_<
+w(tL0Y%?7r)w(wz>T0<z{ejbd5mysK!Q1W$u67lXBm5_Fp+VRQnqGU5~0Rv1(6951J
+
+delta 588
+zcmX@7H(f*HGcPX}0}vdTv^*<7hJoQRhyw%s5C-GtXG{|{oLFL*gCr&~igI(uu<<b%
+zGXc3$6Yoj0^O%5`AQ?g47!E#$U_P)sNI6)ZA1*H}0Fnt71gqjTX2nn;&dm;#7dB>w
+z$%w%90?p<G%88<yEe4mD<c;A1%8P?-kN~UYHD-sIBMDc>Ed@3K=K9I<Ol*uGxAV$?
+zb;=^_mV@gN=8fS7+YNFZ!rj_H*O_n@@deAr@CPfX0|P5qu}C0THCRcCA&aF*FjzTQ
+zMW3liD4khTZSy_m?<|{nIqx!V_Tl-;%Gf*ENhpMk6R4+%b@Ch`TXj%a7qb8f1t2Km
+z0Wxm!CTFB3XU8Y!=jJBnr4&g4#o8tbm+*oZMWR4Llch*}a-*;=qwwVQ!j+TlMMS+=
+zK^pnv;}i4p@=Fp+GV}9_<Kw}K!TN8p1Eq3u;^S8`6iI`O0b9gjlbfGXnv-f*qyrRV
+z1mfcNjFaby*lvC*!p+DiH+i90m53*k7o!bR1OEj<i_Z*RjEqblqL?P@i%YYB%mDyV
+C1$*)U
+
+diff --git a/tools/src/terminal_tools/common/command_guard.py b/tools/src/terminal_tools/common/command_guard.py
+index d871b22..f12adf2 100644
+--- a/tools/src/terminal_tools/common/command_guard.py
++++ b/tools/src/terminal_tools/common/command_guard.py
+@@ -42,6 +42,8 @@ _KILL_VERB = r"(?:pkill|killall|kill)"
+ _PS_STOP = r"(?:stop-process|spps|kill)"
+ _PS_GET = r"(?:get-process|gps|ps)"
+ _PS_START = r"(?:start-process|saps|start)"
++_PS_FOREACH = r"(?:\b(?:foreach-object|foreach)\b|%)"
++_PS_ITEM = r"(?:\$_|\$psitem)"
+ 
+ _BLOCK_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
+     (
+@@ -94,6 +96,36 @@ _BLOCK_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
+         re.compile(rf"\b{_PS_GET}\b[^\n;&]*{_PROTECTED}[^\n;&]*\|\s*(?:[^|\n;&]*\|\s*)?{_PS_STOP}\b", re.IGNORECASE),
+         "kills browser/runtime processes (PowerShell Get-Process | Stop-Process)",
+     ),
++    (
++        # PowerShell Process objects expose a .Kill() method. Direct
++        # `(Get-Process chrome).Kill()` and ForEach-Object scriptblocks
++        # terminate the same protected processes without invoking a stop
++        # cmdlet, so the alias-aware patterns above never see a stop verb.
++        # Keep the span inside one command segment; pipe crossing is
++        # intentional because it carries the protected Process object.
++        re.compile(
++            rf"\b{_PS_GET}\b[^\n;&]*{_PROTECTED}[^\n;&]*"
++            rf"(?:\)\s*(?:\[[^\]\n;&]+\]\s*)?\.\s*kill\s*\("
++            rf"|\|[^\n;&]*{_PS_FOREACH}[^\n;&]*{_PS_ITEM}\s*\.\s*kill\s*\()",
++            re.IGNORECASE,
++        ),
++        "kills browser/runtime processes (PowerShell Process.Kill)",
++    ),
++    (
++        # ForEach-Object can pass each protected Process object to a stop
++        # cmdlet via -InputObject/positional input, pipe $_/$PSItem onward,
++        # use command-name shorthand, or invoke the Kill member directly.
++        re.compile(
++            rf"\b{_PS_GET}\b[^\n;&]*{_PROTECTED}[^\n;&]*\|[^\n;&]*"
++            rf"{_PS_FOREACH}[^\n;&]*(?:"
++            rf"-membername\s+kill\b"
++            rf"|\b{_PS_STOP}\b[^\n;&}}]*(?:-inputobject\s+)?{_PS_ITEM}"
++            rf"|{_PS_ITEM}\s*\|[^\n;&}}]*\b{_PS_STOP}\b"
++            rf"|\b{_PS_STOP}\b\s*(?:[}}]|$))",
++            re.IGNORECASE,
++        ),
++        "kills browser/runtime processes (PowerShell ForEach-Object stop)",
++    ),
+     (
+         # cmd / Windows: taskkill /IM chrome.exe  (or /F /IM ...)
+         # Same segment scoping as the PowerShell stop verb above.
+diff --git a/tools/tests/test_command_guard.py b/tools/tests/test_command_guard.py
+index 65f727c..ca9ba26 100644
+--- a/tools/tests/test_command_guard.py
++++ b/tools/tests/test_command_guard.py
+@@ -71,6 +71,23 @@ WINDOWS_ALIAS_COMMANDS = [
+     "Get-WmiObject Win32_Process -Filter \"Name='msedge.exe'\" | Remove-CimInstance",
+ ]
+ 
++WINDOWS_OBJECT_KILL_COMMANDS = [
++    "(Get-Process chrome).Kill()",
++    "(gps bridge_host).Kill()",
++    "(Get-Process chrome)[0].Kill()",
++    "gps chrome | ForEach-Object { $_.Kill() }",
++    "gps chrome | % { $_.Kill() }",
++    "Get-Process chrome | foreach { $_.Kill() }",
++    "Get-Process msedge | ForEach-Object { Stop-Process -InputObject $_ }",
++    "gps chrome | % { kill -InputObject $_ }",
++    "Get-Process chrome | ForEach-Object { Stop-Process $_ }",
++    "gps bridge_host | foreach { spps -InputObject $PSItem }",
++    "Get-Process chrome | ForEach-Object { $_ | Stop-Process }",
++    "Get-Process chrome | ForEach-Object Stop-Process",
++    "Get-Process chrome | ForEach-Object -MemberName Kill",
++    "gps chrome | % -MemberName Kill",
++]
++
+ BENIGN_COMMANDS = [
+     # Read-only process inspection (workers legitimately did these too)
+     "ps aux | grep -i chrome | head -5",
+@@ -114,10 +131,20 @@ BENIGN_COMMANDS = [
+     "gps; echo chrome | spps -Id 1234",
+     "Get-Process; Write-Output chrome | Stop-Process -Id 99",
+     "gps & echo chrome | kill -Id 1234",
++    # Process-object inspection remains read-only.
++    "(Get-Process chrome).Id",
++    "(Get-Process chrome)[0].Id",
++    "gps chrome | ForEach-Object { $_.Name }",
++    "gps chrome | % { Write-Output $_ }",
++    "Get-Process chrome | foreach { $_.Name }",
++    "Get-Process chrome | ForEach-Object -MemberName Name",
++    "gps chrome | % -MemberName Id",
+ ]
+ 
+ 
+-@pytest.mark.parametrize("cmd", INCIDENT_COMMANDS + ESCALATION_COMMANDS + WINDOWS_ALIAS_COMMANDS)
++@pytest.mark.parametrize(
++    "cmd", INCIDENT_COMMANDS + ESCALATION_COMMANDS + WINDOWS_ALIAS_COMMANDS + WINDOWS_OBJECT_KILL_COMMANDS
++)
+ def test_kill_and_launch_commands_blocked(cmd):
+     msg = check_command(cmd)
+     assert msg is not None, f"guard MISSED: {cmd!r}"
