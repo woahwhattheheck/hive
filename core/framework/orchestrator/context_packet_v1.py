@@ -11,8 +11,9 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any, Mapping, Sequence
+from typing import Any
 
 PACKET_VERSION = "hive.context-packet/v1"
 DEFAULT_CONTEXT_BUDGET_CHARS = 12_000
@@ -226,9 +227,11 @@ def build_context_packet(
 
         try:
             canonical = _canonical_json(values[key])
-        except ContextPacketSerializationError:
+        except ContextPacketSerializationError as exc:
             if is_required:
-                raise ContextPacketSerializationError(f"required context key '{key}' is not canonical JSON")
+                raise ContextPacketSerializationError(
+                    f"required context key '{key}' is not canonical JSON"
+                ) from exc
             omissions.append(ContextPacketOmission(key=key, reason="non_json"))
             continue
 
