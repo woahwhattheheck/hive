@@ -60,6 +60,7 @@ lint.select = [
 lint.per-file-ignores."demos/*" = ["E501"]
 lint.per-file-ignores."framework/agent_loop/agent_loop.py" = ["UP041"]
 lint.per-file-ignores."framework/llm/litellm.py" = ["I001"]
+lint.per-file-ignores."framework/orchestrator/context_packet_v1.py" = ["B904", "UP035"]
 lint.per-file-ignores."framework/server/queen_orchestrator.py" = ["I001"]
 lint.per-file-ignores."framework/server/routes_config.py" = ["F401"]
 lint.per-file-ignores."framework/server/routes_execution.py" = ["B023"]
