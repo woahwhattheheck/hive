@@ -95,6 +95,33 @@ _BLOCK_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
         "kills browser/runtime processes (PowerShell Get-Process | Stop-Process)",
     ),
     (
+        # PowerShell Process objects expose a .Kill() method. The direct
+        # `(Get-Process chrome).Kill()` spelling and ForEach-Object forms
+        # terminate the same protected processes without invoking a stop
+        # cmdlet, so the alias-aware patterns above never see a stop verb.
+        # Keep the span inside one command segment; `|` remains crossable
+        # because the pipeline scriptblock receives the process object there.
+        re.compile(
+            rf"\b{_PS_GET}\b[^\n;&]*{_PROTECTED}[^\n;&]*"
+            rf"(?:\)\s*\.\s*kill\s*\(|\|[^\n;&]*(?:\bforeach-object\b|%)[^\n;&]*\$_\s*\.\s*kill\s*\()",
+            re.IGNORECASE,
+        ),
+        "kills browser/runtime processes (PowerShell Process.Kill)",
+    ),
+    (
+        # ForEach-Object can also pass each protected Process object to a
+        # stop cmdlet via `-InputObject $_`, or use the shorthand
+        # `ForEach-Object Stop-Process`. These are object-pipeline variants
+        # of Get-Process chrome | Stop-Process, not read-only inspection.
+        re.compile(
+            rf"\b{_PS_GET}\b[^\n;&]*{_PROTECTED}[^\n;&]*\|[^\n;&]*"
+            rf"(?:\bforeach-object\b|%)[^\n;&]*"
+            rf"(?:\b{_PS_STOP}\b[^\n;&]*(?:-inputobject\s+)?\$_|\b{_PS_STOP}\b\s*(?:[}}]|$))",
+            re.IGNORECASE,
+        ),
+        "kills browser/runtime processes (PowerShell ForEach-Object stop)",
+    ),
+    (
         # cmd / Windows: taskkill /IM chrome.exe  (or /F /IM ...)
         # Same segment scoping as the PowerShell stop verb above.
         re.compile(rf"\btaskkill\b[^\n;|&]*{_PROTECTED}", re.IGNORECASE),
