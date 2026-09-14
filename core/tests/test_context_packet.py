@@ -5,6 +5,7 @@ import unittest
 from types import SimpleNamespace
 
 from framework.orchestrator.context_packet import (
+    HARD_CONTEXT_PACKET_MAX_CHARS,
     ContextPacketBudgetError,
     ContextPacketConfigurationError,
     ContextPacketSerializationError,
@@ -133,6 +134,7 @@ class ContextPacketTests(unittest.TestCase):
             context_keys=[long_key],
             required_keys=[],
             budget_chars=700,
+            max_packet_chars=HARD_CONTEXT_PACKET_MAX_CHARS,
         )
         rendered = render_context_packet(packet)
         self.assertEqual(packet.entries, ())
@@ -148,6 +150,7 @@ class ContextPacketTests(unittest.TestCase):
                 context_keys=[long_key],
                 required_keys=[long_key],
                 budget_chars=700,
+                max_packet_chars=HARD_CONTEXT_PACKET_MAX_CHARS,
             )
 
     def test_entry_key_newlines_are_json_escaped_not_prompt_frames(self):
