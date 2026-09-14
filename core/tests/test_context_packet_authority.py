@@ -56,11 +56,11 @@ class ContextPacketAuthorityTests(unittest.TestCase):
         )
         self.assertEqual(["global_record"], [entry.key for entry in packet.entries])
 
-    def test_existing_framework_underscore_key_remains_in_effective_scope(self):
+    def test_explicit_framework_underscore_key_remains_in_scope(self):
         spec = SimpleNamespace(
             id="worker",
             name="Worker",
-            input_keys=["task"],
+            input_keys=["task", "_handoff"],
             output_keys=["result"],
             context_keys=["_handoff"],
         )
