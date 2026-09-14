@@ -13,11 +13,15 @@ import hashlib
 import json
 import re
 from collections import Counter
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any, Mapping, Sequence
+from typing import Any
 
 PACKET_VERSION = "hive.context-packet/v1"
 DEFAULT_CONTEXT_BUDGET_CHARS = 12_000
+DEFAULT_CONTEXT_PACKET_MAX_CHARS = 16_384
+HARD_CONTEXT_PACKET_MAX_CHARS = 32_768
+MAX_CONTEXT_KEYS = 128
 
 _SENSITIVE_KEY_PARTS = frozenset(
     {
@@ -52,7 +56,7 @@ class MissingRequiredContextError(ContextPacketError):
 
 
 class ContextPacketBudgetError(ContextPacketError):
-    """Raised when required context cannot fit within the configured budget."""
+    """Raised when required context cannot fit within a configured bound."""
 
 
 class ContextPacketSerializationError(ContextPacketError):
@@ -89,6 +93,26 @@ def _dedupe(values: Sequence[str]) -> tuple[str, ...]:
             result.append(key)
             seen.add(key)
     return tuple(result)
+
+
+def _validate_key_declarations(requested: tuple[str, ...], required: tuple[str, ...]) -> None:
+    """Bound packet metadata before constructing repeated structured fields."""
+
+    if len(requested) > MAX_CONTEXT_KEYS:
+        raise ContextPacketConfigurationError(
+            f"context_keys contains {len(requested)} entries; maximum is {MAX_CONTEXT_KEYS}"
+        )
+    if len(required) > MAX_CONTEXT_KEYS:
+        raise ContextPacketConfigurationError(
+            f"context_required_keys contains {len(required)} entries; maximum is {MAX_CONTEXT_KEYS}"
+        )
+
+    declaration_chars = sum(len(key) for key in requested) + sum(len(key) for key in required)
+    if declaration_chars > HARD_CONTEXT_PACKET_MAX_CHARS:
+        raise ContextPacketConfigurationError(
+            "context key declarations exceed framework metadata ceiling "
+            f"({declaration_chars} > {HARD_CONTEXT_PACKET_MAX_CHARS} chars)"
+        )
 
 
 def _normalize_key_name(key: str) -> str:
@@ -198,6 +222,7 @@ class ContextPacket:
     requested_keys: tuple[str, ...]
     required_keys: tuple[str, ...]
     budget_chars: int
+    max_packet_chars: int
     payload_chars: int
     entries: tuple[ContextPacketEntry, ...]
     omissions: tuple[ContextPacketOmission, ...]
@@ -213,6 +238,7 @@ class ContextPacket:
             "requested_keys": list(self.requested_keys),
             "required_keys": list(self.required_keys),
             "budget_chars": self.budget_chars,
+            "max_packet_chars": self.max_packet_chars,
             "payload_chars": self.payload_chars,
             "entries": [entry.to_dict() for entry in self.entries],
             "omissions": [omission.to_dict() for omission in self.omissions],
@@ -232,6 +258,7 @@ def _build_packet_object(
     requested: tuple[str, ...],
     required: tuple[str, ...],
     budget_chars: int,
+    max_packet_chars: int,
     entries: Sequence[ContextPacketEntry],
     omission_by_key: Mapping[str, ContextPacketOmission],
 ) -> ContextPacket:
@@ -245,6 +272,7 @@ def _build_packet_object(
         "requested_keys": list(requested),
         "required_keys": list(required),
         "budget_chars": int(budget_chars),
+        "max_packet_chars": int(max_packet_chars),
         "payload_chars": payload_chars,
         "entries": [entry.to_dict() for entry in entries],
         "omissions": [omission.to_dict() for omission in omissions],
@@ -256,6 +284,7 @@ def _build_packet_object(
         requested_keys=requested,
         required_keys=required,
         budget_chars=int(budget_chars),
+        max_packet_chars=int(max_packet_chars),
         payload_chars=payload_chars,
         entries=tuple(entries),
         omissions=omissions,
@@ -264,7 +293,7 @@ def _build_packet_object(
 
 
 def _render_context_packet_text(packet: ContextPacket) -> str:
-    """Render prompt-safe packet text without performing the budget assertion."""
+    """Render prompt-safe packet text without performing bound assertions."""
 
     # Canonical JSON is used for entry rendering so context key names and string
     # values cannot create new prompt lines or delimiters via embedded controls.
@@ -279,6 +308,7 @@ def _render_context_packet_text(packet: ContextPacket) -> str:
             f"packet_sha256: {packet.packet_sha256}",
             f"goal_sha256: {packet.goal_sha256}",
             f"render_budget_chars: {packet.budget_chars}",
+            f"packet_max_chars: {packet.max_packet_chars}",
             f"payload_chars: {packet.payload_chars}",
             "entries_json: " + entries_json,
             "omissions_summary: " + omissions_summary,
@@ -291,6 +321,37 @@ def _render_context_packet_text(packet: ContextPacket) -> str:
     )
 
 
+def _packet_sizes(packet: ContextPacket) -> tuple[int, int]:
+    structured_chars = len(_canonical_json(packet.to_dict()))
+    rendered_chars = len(_render_context_packet_text(packet))
+    return structured_chars, rendered_chars
+
+
+def _packet_within_bounds(packet: ContextPacket) -> bool:
+    structured_chars, rendered_chars = _packet_sizes(packet)
+    return (
+        rendered_chars <= packet.budget_chars
+        and structured_chars <= packet.max_packet_chars
+        and rendered_chars <= packet.max_packet_chars
+    )
+
+
+def _assert_packet_bounds(packet: ContextPacket) -> None:
+    structured_chars, rendered_chars = _packet_sizes(packet)
+    if rendered_chars > packet.budget_chars:
+        raise ContextPacketBudgetError(
+            "context packet render exceeds configured budget "
+            f"({rendered_chars} > {packet.budget_chars} chars)"
+        )
+    largest = max(structured_chars, rendered_chars)
+    if largest > packet.max_packet_chars:
+        raise ContextPacketBudgetError(
+            "complete context packet exceeds context_packet_max_chars "
+            f"({largest} > {packet.max_packet_chars}; "
+            f"structured={structured_chars}, rendered={rendered_chars})"
+        )
+
+
 def build_context_packet(
     *,
     node_id: str,
@@ -300,16 +361,20 @@ def build_context_packet(
     context_keys: Sequence[str],
     required_keys: Sequence[str] = (),
     budget_chars: int = DEFAULT_CONTEXT_BUDGET_CHARS,
+    max_packet_chars: int = DEFAULT_CONTEXT_PACKET_MAX_CHARS,
 ) -> ContextPacket:
-    """Build a deterministic packet under a hard worker-facing render budget.
+    """Build a deterministic packet under hard render and complete-size bounds.
 
     Required keys are admitted before optional keys. Optional entries retain
     declaration order as priority and are admitted whole or omitted whole.
     Credential-like mapping keys are fenced recursively before serialization.
+    ``budget_chars`` bounds worker-facing render text; ``max_packet_chars``
+    independently bounds both that text and canonical structured packet JSON.
     """
 
     requested = _dedupe(context_keys)
     required = _dedupe(required_keys)
+    _validate_key_declarations(requested, required)
     requested_set = set(requested)
 
     unknown_required = [key for key in required if key not in requested_set]
@@ -317,8 +382,25 @@ def build_context_packet(
         raise ContextPacketConfigurationError(
             "required context keys must also appear in context_keys: " + ", ".join(unknown_required)
         )
-    if budget_chars <= 0:
+
+    try:
+        resolved_budget = int(budget_chars)
+    except (TypeError, ValueError) as exc:
+        raise ContextPacketConfigurationError("context packet budget_chars must be an integer") from exc
+    if resolved_budget <= 0:
         raise ContextPacketConfigurationError("context packet budget_chars must be > 0")
+
+    try:
+        resolved_max_packet = int(max_packet_chars)
+    except (TypeError, ValueError) as exc:
+        raise ContextPacketConfigurationError("context_packet_max_chars must be an integer") from exc
+    if resolved_max_packet <= 0:
+        raise ContextPacketConfigurationError("context_packet_max_chars must be > 0")
+    if resolved_max_packet > HARD_CONTEXT_PACKET_MAX_CHARS:
+        raise ContextPacketConfigurationError(
+            "context_packet_max_chars exceeds framework hard maximum "
+            f"({resolved_max_packet} > {HARD_CONTEXT_PACKET_MAX_CHARS})"
+        )
 
     required_set = set(required)
     admission_order = list(required) + [key for key in requested if key not in required_set]
@@ -354,9 +436,11 @@ def build_context_packet(
 
         try:
             canonical = _canonical_json(values[key])
-        except ContextPacketSerializationError:
+        except ContextPacketSerializationError as exc:
             if is_required:
-                raise ContextPacketSerializationError(f"required context key '{key}' is not canonical JSON")
+                raise ContextPacketSerializationError(
+                    f"required context key '{key}' is not canonical JSON"
+                ) from exc
             omission_by_key[key] = ContextPacketOmission(key=key, reason="non_json")
             continue
 
@@ -371,8 +455,7 @@ def build_context_packet(
         else:
             optional_entries.append(entry)
             # Start optional serializable values as budget omissions, then
-            # promote them one-by-one in priority order if the complete prompt
-            # still fits. This makes the configured budget a real render bound.
+            # promote them one-by-one in priority order if both packet forms fit.
             omission_by_key[key] = ContextPacketOmission(
                 key=key,
                 reason="budget",
@@ -388,16 +471,12 @@ def build_context_packet(
         goal_sha256=goal_sha256,
         requested=requested,
         required=required,
-        budget_chars=budget_chars,
+        budget_chars=resolved_budget,
+        max_packet_chars=resolved_max_packet,
         entries=required_entries,
         omission_by_key=omission_by_key,
     )
-    required_render_chars = len(_render_context_packet_text(packet))
-    if required_render_chars > budget_chars:
-        raise ContextPacketBudgetError(
-            "required context plus packet envelope does not fit render budget "
-            f"({required_render_chars} > {budget_chars} chars)"
-        )
+    _assert_packet_bounds(packet)
 
     admitted_entries = list(required_entries)
     for entry in optional_entries:
@@ -410,11 +489,12 @@ def build_context_packet(
             goal_sha256=goal_sha256,
             requested=requested,
             required=required,
-            budget_chars=budget_chars,
+            budget_chars=resolved_budget,
+            max_packet_chars=resolved_max_packet,
             entries=trial_entries,
             omission_by_key=trial_omissions,
         )
-        if len(_render_context_packet_text(trial_packet)) <= budget_chars:
+        if _packet_within_bounds(trial_packet):
             admitted_entries = trial_entries
             omission_by_key = trial_omissions
 
@@ -424,40 +504,74 @@ def build_context_packet(
         goal_sha256=goal_sha256,
         requested=requested,
         required=required,
-        budget_chars=budget_chars,
+        budget_chars=resolved_budget,
+        max_packet_chars=resolved_max_packet,
         entries=admitted_entries,
         omission_by_key=omission_by_key,
     )
-    rendered_chars = len(_render_context_packet_text(packet))
-    if rendered_chars > budget_chars:
-        # Defensive invariant: the admission loop above should make this
-        # unreachable, but fail closed rather than emitting an oversized prompt.
-        raise ContextPacketBudgetError(
-            f"context packet render exceeds configured budget ({rendered_chars} > {budget_chars} chars)"
-        )
+    _assert_packet_bounds(packet)
     return packet
 
 
-def build_node_context_packet(*, node_spec: Any, buffer: Any, goal_context: str) -> ContextPacket | None:
-    """Build a packet from an orchestrator NodeSpec/DataBuffer-like pair.
+def _authorized_buffer_keys(node_spec: Any, values: Mapping[str, Any]) -> set[str] | None:
+    """Mirror the node's existing effective shared-buffer read authority."""
 
-    The feature is opt-in: a node only receives a packet when it declares a
-    non-empty ``context_keys`` extra field. ``context_required_keys`` and
-    ``context_char_budget`` are optional companion fields.
-    """
-
-    context_keys = list(getattr(node_spec, "context_keys", None) or [])
-    if not context_keys:
+    input_keys = list(getattr(node_spec, "input_keys", None) or [])
+    # DataBuffer represents unrestricted reads as an empty allow-set. The
+    # scoped-buffer builder only adds framework-managed ``_`` keys when a node
+    # already has an explicit read set, so output-only nodes remain unrestricted.
+    if not input_keys:
         return None
 
-    required_keys = list(getattr(node_spec, "context_required_keys", None) or [])
+    authorized = {str(key) for key in input_keys}
+    authorized.update(
+        key for key in values if isinstance(key, str) and key.startswith("_")
+    )
+    return authorized
+
+
+def build_node_context_packet(*, node_spec: Any, buffer: Any, goal_context: str) -> ContextPacket | None:
+    """Build a packet without expanding the node's shared-buffer read scope.
+
+    The feature is opt-in: a node only receives a packet when it declares a
+    non-empty ``context_keys`` extra field. ``context_required_keys``,
+    ``context_char_budget`` and ``context_packet_max_chars`` are optional
+    companion fields.
+    """
+
+    raw_context_keys = list(getattr(node_spec, "context_keys", None) or [])
+    if not raw_context_keys:
+        return None
+
+    context_keys = _dedupe(raw_context_keys)
+    required_keys = _dedupe(list(getattr(node_spec, "context_required_keys", None) or []))
+    _validate_key_declarations(context_keys, required_keys)
+
     raw_budget = getattr(node_spec, "context_char_budget", DEFAULT_CONTEXT_BUDGET_CHARS)
+    raw_max_packet = getattr(
+        node_spec,
+        "context_packet_max_chars",
+        DEFAULT_CONTEXT_PACKET_MAX_CHARS,
+    )
     try:
         budget_chars = int(raw_budget)
     except (TypeError, ValueError) as exc:
         raise ContextPacketConfigurationError("context_char_budget must be an integer") from exc
+    try:
+        max_packet_chars = int(raw_max_packet)
+    except (TypeError, ValueError) as exc:
+        raise ContextPacketConfigurationError("context_packet_max_chars must be an integer") from exc
 
     values = buffer.read_all()
+    authorized = _authorized_buffer_keys(node_spec, values)
+    if authorized is not None:
+        unauthorized = [key for key in context_keys if key not in authorized]
+        if unauthorized:
+            raise ContextPacketConfigurationError(
+                "context_keys exceed node buffer read authority: " + ", ".join(unauthorized)
+            )
+        values = {key: value for key, value in values.items() if key in authorized}
+
     return build_context_packet(
         node_id=getattr(node_spec, "id", ""),
         node_name=getattr(node_spec, "name", ""),
@@ -466,15 +580,12 @@ def build_node_context_packet(*, node_spec: Any, buffer: Any, goal_context: str)
         context_keys=context_keys,
         required_keys=required_keys,
         budget_chars=budget_chars,
+        max_packet_chars=max_packet_chars,
     )
 
 
 def render_context_packet(packet: ContextPacket) -> str:
-    """Render a prompt-safe packet and assert its configured hard bound."""
+    """Render a prompt-safe packet and assert both configured hard bounds."""
 
-    rendered = _render_context_packet_text(packet)
-    if len(rendered) > packet.budget_chars:
-        raise ContextPacketBudgetError(
-            f"context packet render exceeds configured budget ({len(rendered)} > {packet.budget_chars} chars)"
-        )
-    return rendered
+    _assert_packet_bounds(packet)
+    return _render_context_packet_text(packet)
