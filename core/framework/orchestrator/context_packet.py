@@ -48,16 +48,17 @@ def _plain_utf8_string(value: Any) -> str:
 def _snapshot_json_value(value: Any, seen: set[int]) -> Any:
     """Detach one value without invoking user-defined container accessors."""
 
-    if value is None or type(value) in (bool, int):
+    value_type = type(value)
+    if value is None or value_type is bool or value_type is int:
         return value
-    if type(value) is str:
+    if value_type is str:
         return _plain_utf8_string(value)
-    if type(value) is float:
+    if value_type is float:
         if not math.isfinite(value):
             raise _SnapshotRejected("non-finite numbers are not canonical JSON")
         return value
 
-    if type(value) is dict:
+    if value_type is dict:
         object_id = id(value)
         if object_id in seen:
             raise _SnapshotRejected("shared or cyclic JSON containers are not accepted")
@@ -69,14 +70,14 @@ def _snapshot_json_value(value: Any, seen: set[int]) -> Any:
             detached[plain_key] = _snapshot_json_value(child, seen)
         return detached
 
-    if type(value) is list:
+    if value_type is list:
         object_id = id(value)
         if object_id in seen:
             raise _SnapshotRejected("shared or cyclic JSON containers are not accepted")
         seen.add(object_id)
         return [_snapshot_json_value(child, seen) for child in list.copy(value)]
 
-    if type(value) is tuple:
+    if value_type is tuple:
         object_id = id(value)
         if object_id in seen:
             raise _SnapshotRejected("shared or cyclic JSON containers are not accepted")
