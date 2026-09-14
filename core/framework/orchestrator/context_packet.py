@@ -244,13 +244,22 @@ def build_context_packet(
             f"({resolved_max} > {HARD_CONTEXT_PACKET_MAX_CHARS})"
         )
 
-    # Never hand nested credential-bearing material to the v1 serializer. For an
-    # optional value we remove it and later rewrite v1's "missing" omission to
-    # the truthful "sensitive_value" reason without retaining a secret digest.
+    # Never hand credential-bearing material to the v1 serializer. Optional
+    # values are removed and their v1 "missing" omissions are rewritten to the
+    # truthful sensitive reason without retaining a secret digest.
+    top_level_sensitive: set[str] = set()
     nested_sensitive: set[str] = set()
     filtered_values = dict(values)
     for key in requested:
-        if key not in values or _sensitive_key(key):
+        if key not in values:
+            continue
+        if _sensitive_key(key):
+            if key in required_set:
+                raise SensitiveContextKeyError(
+                    f"required context key '{key}' is credential-like and cannot be packetized"
+                )
+            top_level_sensitive.add(key)
+            filtered_values.pop(key, None)
             continue
         sensitive_path = _sensitive_value_path(values[key])
         if sensitive_path is None:
@@ -272,46 +281,12 @@ def build_context_packet(
         budget_chars=budget_chars,
     )
 
-    # v1 recognizes separator-delimited credential names. If a camelCase top-level
-    # key reaches v1, rewrite its optional omission (or fail its required use)
-    # before any credential-bearing value can be serialized into an entry.
-    top_level_sensitive = {key for key in requested if _sensitive_key(key) and not _legacy._sensitive_key(key)}
-    if top_level_sensitive:
-        leaked_entries = [entry for entry in base.entries if entry.key in top_level_sensitive]
-        if leaked_entries:
-            required_leaks = [entry.key for entry in leaked_entries if entry.key in required_set]
-            if required_leaks:
-                raise SensitiveContextKeyError(
-                    "required context key is credential-like and cannot be packetized: " + ", ".join(required_leaks)
-                )
-            retained_entries = tuple(entry for entry in base.entries if entry.key not in top_level_sensitive)
-            retained_payload_chars = sum(entry.chars for entry in retained_entries)
-            extra_omissions = tuple(
-                ContextPacketOmission(key=entry.key, reason="sensitive_key") for entry in leaked_entries
-            )
-            base = _legacy.ContextPacket(
-                node_id=base.node_id,
-                node_name=base.node_name,
-                goal_sha256=base.goal_sha256,
-                requested_keys=base.requested_keys,
-                required_keys=base.required_keys,
-                budget_chars=base.budget_chars,
-                payload_chars=retained_payload_chars,
-                entries=retained_entries,
-                omissions=base.omissions + extra_omissions,
-                packet_sha256=base.packet_sha256,
-                version=base.version,
-            )
-
     omissions: list[ContextPacketOmission] = []
     for omission in base.omissions:
-        if omission.key in nested_sensitive:
-            omissions.append(
-                ContextPacketOmission(
-                    key=omission.key,
-                    reason="sensitive_value",
-                )
-            )
+        if omission.key in top_level_sensitive:
+            omissions.append(ContextPacketOmission(key=omission.key, reason="sensitive_key"))
+        elif omission.key in nested_sensitive:
+            omissions.append(ContextPacketOmission(key=omission.key, reason="sensitive_value"))
         else:
             omissions.append(omission)
 
