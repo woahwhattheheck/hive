@@ -13,8 +13,10 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any, Mapping, Sequence
+from typing import Any
 
 from framework.orchestrator import context_packet_v1 as _legacy
 
@@ -33,6 +35,9 @@ ContextPacketSerializationError = _legacy.ContextPacketSerializationError
 SensitiveContextKeyError = _legacy.SensitiveContextKeyError
 ContextPacketEntry = _legacy.ContextPacketEntry
 ContextPacketOmission = _legacy.ContextPacketOmission
+
+_CAMEL_LOWER_TO_UPPER = re.compile(r"(?<=[a-z0-9])(?=[A-Z])")
+_CAMEL_ACRONYM_TO_WORD = re.compile(r"(?<=[A-Z])(?=[A-Z][a-z])")
 
 
 def _sha256(text: str) -> str:
@@ -75,6 +80,16 @@ def _validated_keys(values: Sequence[str], *, label: str) -> tuple[str, ...]:
     return tuple(result)
 
 
+def _sensitive_key(key: str) -> bool:
+    """Recognize credential-shaped keys across separator and camel-case styles."""
+
+    if _legacy._sensitive_key(key):
+        return True
+    split_camel = _CAMEL_LOWER_TO_UPPER.sub("_", key)
+    split_camel = _CAMEL_ACRONYM_TO_WORD.sub("_", split_camel)
+    return _legacy._sensitive_key(split_camel)
+
+
 def _sensitive_value_path(value: Any) -> str | None:
     """Find a nested credential-shaped object key without recursive traversal.
 
@@ -96,7 +111,7 @@ def _sensitive_value_path(value: Any) -> str | None:
             for raw_key, nested in current.items():
                 if isinstance(raw_key, str):
                     child_path = f"{path}.{raw_key}"
-                    if _legacy._sensitive_key(raw_key):
+                    if _sensitive_key(raw_key):
                         return child_path
                 else:
                     child_path = f"{path}.[key]"
@@ -235,7 +250,7 @@ def build_context_packet(
     nested_sensitive: set[str] = set()
     filtered_values = dict(values)
     for key in requested:
-        if key not in values or _legacy._sensitive_key(key):
+        if key not in values or _sensitive_key(key):
             continue
         sensitive_path = _sensitive_value_path(values[key])
         if sensitive_path is None:
@@ -256,6 +271,37 @@ def build_context_packet(
         required_keys=required,
         budget_chars=budget_chars,
     )
+
+    # v1 recognizes separator-delimited credential names. If a camelCase top-level
+    # key reaches v1, rewrite its optional omission (or fail its required use)
+    # before any credential-bearing value can be serialized into an entry.
+    top_level_sensitive = {key for key in requested if _sensitive_key(key) and not _legacy._sensitive_key(key)}
+    if top_level_sensitive:
+        leaked_entries = [entry for entry in base.entries if entry.key in top_level_sensitive]
+        if leaked_entries:
+            required_leaks = [entry.key for entry in leaked_entries if entry.key in required_set]
+            if required_leaks:
+                raise SensitiveContextKeyError(
+                    "required context key is credential-like and cannot be packetized: " + ", ".join(required_leaks)
+                )
+            retained_entries = tuple(entry for entry in base.entries if entry.key not in top_level_sensitive)
+            retained_payload_chars = sum(entry.chars for entry in retained_entries)
+            extra_omissions = tuple(
+                ContextPacketOmission(key=entry.key, reason="sensitive_key") for entry in leaked_entries
+            )
+            base = _legacy.ContextPacket(
+                node_id=base.node_id,
+                node_name=base.node_name,
+                goal_sha256=base.goal_sha256,
+                requested_keys=base.requested_keys,
+                required_keys=base.required_keys,
+                budget_chars=base.budget_chars,
+                payload_chars=retained_payload_chars,
+                entries=retained_entries,
+                omissions=base.omissions + extra_omissions,
+                packet_sha256=base.packet_sha256,
+                version=base.version,
+            )
 
     omissions: list[ContextPacketOmission] = []
     for omission in base.omissions:
