@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'zbl-q4h7/hive-context-packet-union-ci-20260913']
   pull_request:
     branches: [main]
     
