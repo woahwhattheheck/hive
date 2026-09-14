@@ -99,6 +99,56 @@ class ContextPacketAuthorityTests(unittest.TestCase):
         self.assertNotIn(secret, render_context_packet(packet))
         self.assertNotIn(secret, str(packet.to_dict()))
 
+    def test_camel_case_top_level_credential_keys_are_filtered_before_v1_serialization(self):
+        for key in ("clientSecret", "accessToken", "refreshToken", "authToken", "privateKey"):
+            with self.subTest(key=key):
+                unserializable_secret = object()
+                packet = build_context_packet(
+                    node_id="worker",
+                    node_name="Worker",
+                    goal_context="goal",
+                    values={key: unserializable_secret},
+                    context_keys=[key],
+                )
+                self.assertEqual((), packet.entries)
+                self.assertEqual("sensitive_key", packet.omissions[0].reason)
+
+    def test_camel_case_nested_credential_keys_are_filtered_before_v1_serialization(self):
+        for key in ("clientSecret", "accessToken", "refreshToken", "authToken", "privateKey"):
+            with self.subTest(key=key):
+                unserializable_secret = object()
+                packet = build_context_packet(
+                    node_id="worker",
+                    node_name="Worker",
+                    goal_context="goal",
+                    values={"integration_config": {"auth": {key: unserializable_secret}}},
+                    context_keys=["integration_config"],
+                )
+                self.assertEqual((), packet.entries)
+                self.assertEqual("sensitive_value", packet.omissions[0].reason)
+
+    def test_camel_case_required_credential_key_fails_closed(self):
+        with self.assertRaises(SensitiveContextKeyError):
+            build_context_packet(
+                node_id="worker",
+                node_name="Worker",
+                goal_context="goal",
+                values={"clientSecret": "must-not-serialize"},
+                context_keys=["clientSecret"],
+                required_keys=["clientSecret"],
+            )
+
+    def test_camel_case_nested_required_credential_field_fails_closed(self):
+        with self.assertRaises(SensitiveContextKeyError):
+            build_context_packet(
+                node_id="worker",
+                node_name="Worker",
+                goal_context="goal",
+                values={"integration_config": {"auth": {"clientSecret": "must-not-serialize"}}},
+                context_keys=["integration_config"],
+                required_keys=["integration_config"],
+            )
+
     def test_nested_required_credential_field_fails_closed(self):
         with self.assertRaises(SensitiveContextKeyError):
             build_context_packet(
