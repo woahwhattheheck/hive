@@ -3,6 +3,10 @@
 Lazy imports to avoid circular dependencies with graph/event_loop/*.
 """
 
+# Install the authoritative context-packet facade before any direct import of
+# the retained implementation module can expose its predecessor resolver.
+from . import context_packet as _context_packet
+
 
 def __getattr__(name: str):
     if name in ("GraphContext",):
