@@ -1,177 +1,146 @@
-"""Bounded, integrity-bound context packets for worker dispatch.
+"""Public context-packet API with exact shared-buffer and value authority.
 
-Context packets are deliberately deterministic and non-generative: the
-framework selects explicitly named shared-buffer keys, admits whole JSON
-values under a budget, hashes every admitted/omitted serializable value, and
-binds the packet to the worker + goal. No LLM summarization happens here.
+The reviewed implementation is retained byte-for-byte in
+``context_packet_impl``. This facade narrows the authority resolver to the
+actual ``DataBuffer`` contract and snapshots selected caller values into one
+strict plain-JSON generation before credential screening or serialization.
 """
 
 from __future__ import annotations
 
-import hashlib
-import json
-import re
-from dataclasses import dataclass
-from typing import Any, Mapping, Sequence
+import math
+from collections.abc import Mapping, Sequence
+from typing import Any
 
-PACKET_VERSION = "hive.context-packet/v1"
-DEFAULT_CONTEXT_BUDGET_CHARS = 12_000
+from . import context_packet_impl as _impl
 
-_SENSITIVE_KEY_PARTS = frozenset(
-    {
-        "password",
-        "passwd",
-        "secret",
-        "client_secret",
-        "access_token",
-        "refresh_token",
-        "auth_token",
-        "api_key",
-        "apikey",
-        "private_key",
-        "cookie",
-        "authorization",
-        "credential",
-        "credentials",
-    }
-)
+_MISSING = object()
+_NON_JSON = object()
 
 
-class ContextPacketError(ValueError):
-    """Base class for context-packet construction failures."""
+class _SnapshotRejected(ValueError):
+    """Internal signal for a value that is unsafe to inspect as JSON."""
 
 
-class ContextPacketConfigurationError(ContextPacketError):
-    """Raised for an invalid node context-packet configuration."""
+def _authorized_buffer_keys(
+    node_spec: Any,
+    values: Mapping[str, Any],
+) -> set[str] | None:
+    """Mirror ``DataBuffer.with_permissions`` without name-based expansion."""
+
+    del values  # Buffer contents do not define who may read them.
+    input_keys = list(getattr(node_spec, "input_keys", None) or [])
+    if not input_keys:
+        return None
+    return {str(key) for key in input_keys}
 
 
-class MissingRequiredContextError(ContextPacketError):
-    """Raised when a required context key is not present."""
-
-
-class ContextPacketBudgetError(ContextPacketError):
-    """Raised when required context cannot fit within the configured budget."""
-
-
-class ContextPacketSerializationError(ContextPacketError):
-    """Raised when required context cannot be represented as canonical JSON."""
-
-
-class SensitiveContextKeyError(ContextPacketError):
-    """Raised when a required key looks like credential material."""
-
-
-def _sha256(text: str) -> str:
-    return hashlib.sha256(text.encode("utf-8")).hexdigest()
-
-
-def _canonical_json(value: Any) -> str:
+def _plain_utf8_string(value: Any) -> str:
+    if type(value) is not str:
+        raise _SnapshotRejected("JSON object keys and strings must be plain strings")
     try:
-        return json.dumps(
-            value,
-            ensure_ascii=False,
-            sort_keys=True,
-            separators=(",", ":"),
-            allow_nan=False,
+        value.encode("utf-8")
+    except UnicodeEncodeError as exc:
+        raise _SnapshotRejected("JSON strings must be valid UTF-8") from exc
+    return value
+
+
+def _snapshot_json_value(value: Any, seen: set[int]) -> Any:
+    """Detach one value without invoking user-defined container accessors."""
+
+    value_type = type(value)
+    if value is None or value_type is bool or value_type is int:
+        return value
+    if value_type is str:
+        return _plain_utf8_string(value)
+    if value_type is float:
+        if not math.isfinite(value):
+            raise _SnapshotRejected("non-finite numbers are not canonical JSON")
+        return value
+
+    if value_type is dict:
+        object_id = id(value)
+        if object_id in seen:
+            raise _SnapshotRejected("shared or cyclic JSON containers are not accepted")
+        seen.add(object_id)
+        copied = dict.copy(value)
+        detached: dict[str, Any] = {}
+        for key, child in dict.items(copied):
+            plain_key = _plain_utf8_string(key)
+            detached[plain_key] = _snapshot_json_value(child, seen)
+        return detached
+
+    if value_type is list:
+        object_id = id(value)
+        if object_id in seen:
+            raise _SnapshotRejected("shared or cyclic JSON containers are not accepted")
+        seen.add(object_id)
+        return [_snapshot_json_value(child, seen) for child in list.copy(value)]
+
+    if value_type is tuple:
+        object_id = id(value)
+        if object_id in seen:
+            raise _SnapshotRejected("shared or cyclic JSON containers are not accepted")
+        seen.add(object_id)
+        return [_snapshot_json_value(child, seen) for child in value]
+
+    raise _SnapshotRejected("custom objects and container subclasses are not accepted")
+
+
+def _capture_plain_values(values: Any) -> dict[str, Any]:
+    """Capture an outer context mapping without invoking custom accessors."""
+
+    if type(values) is not dict:
+        raise _impl.ContextPacketSerializationError(
+            "context values must be supplied as a plain dict"
         )
-    except (TypeError, ValueError) as exc:
-        raise ContextPacketSerializationError(f"context value is not canonical JSON: {exc}") from exc
+
+    source = dict.copy(values)
+    for key in dict.keys(source):
+        try:
+            _plain_utf8_string(key)
+        except _SnapshotRejected as exc:
+            raise _impl.ContextPacketSerializationError(
+                "context values keys must be plain UTF-8 strings"
+            ) from exc
+    return source
 
 
-def _dedupe(values: Sequence[str]) -> tuple[str, ...]:
-    seen: set[str] = set()
-    result: list[str] = []
-    for raw in values:
-        key = str(raw)
-        if key not in seen:
-            result.append(key)
-            seen.add(key)
-    return tuple(result)
+def _detach_selected_values(
+    source: dict[str, Any],
+    requested: tuple[str, ...],
+) -> dict[str, Any]:
+    """Detach selected values while preserving optional non-JSON omissions."""
+
+    detached: dict[str, Any] = {}
+    seen: set[int] = set()
+    for key in requested:
+        raw = dict.get(source, key, _MISSING)
+        if raw is _MISSING:
+            continue
+        trial_seen = set(seen)
+        try:
+            snapshot = _snapshot_json_value(raw, trial_seen)
+        except _SnapshotRejected:
+            detached[key] = _NON_JSON
+        else:
+            detached[key] = snapshot
+            seen = trial_seen
+    return detached
 
 
-def _sensitive_key(key: str) -> bool:
-    normalized = re.sub(r"[^a-z0-9]+", "_", key.casefold()).strip("_")
-    if normalized in _SENSITIVE_KEY_PARTS:
-        return True
-    parts = normalized.split("_") if normalized else []
-    joined_pairs = {"_".join(parts[i : i + 2]) for i in range(max(0, len(parts) - 1))}
-    return bool(_SENSITIVE_KEY_PARTS.intersection(parts) or _SENSITIVE_KEY_PARTS.intersection(joined_pairs))
-
-
-@dataclass(frozen=True, slots=True)
-class ContextPacketEntry:
-    """One admitted, whole context value."""
-
-    key: str
-    canonical_json: str
-    sha256: str
-    chars: int
-
-    @property
-    def value(self) -> Any:
-        return json.loads(self.canonical_json)
-
-    def to_dict(self) -> dict[str, Any]:
-        return {
-            "key": self.key,
-            "value": self.value,
-            "sha256": self.sha256,
-            "chars": self.chars,
-        }
-
-
-@dataclass(frozen=True, slots=True)
-class ContextPacketOmission:
-    """Metadata for context deliberately not included in a packet."""
-
-    key: str
-    reason: str
-    sha256: str | None = None
-    chars: int | None = None
-
-    def to_dict(self) -> dict[str, Any]:
-        payload: dict[str, Any] = {"key": self.key, "reason": self.reason}
-        if self.sha256 is not None:
-            payload["sha256"] = self.sha256
-        if self.chars is not None:
-            payload["chars"] = self.chars
-        return payload
-
-
-@dataclass(frozen=True, slots=True)
-class ContextPacket:
-    """Immutable logical packet delivered to one worker."""
-
-    node_id: str
-    node_name: str
-    goal_sha256: str
-    requested_keys: tuple[str, ...]
-    required_keys: tuple[str, ...]
-    budget_chars: int
-    payload_chars: int
-    entries: tuple[ContextPacketEntry, ...]
-    omissions: tuple[ContextPacketOmission, ...]
-    packet_sha256: str
-    version: str = PACKET_VERSION
-
-    def _body_dict(self) -> dict[str, Any]:
-        return {
-            "version": self.version,
-            "node_id": self.node_id,
-            "node_name": self.node_name,
-            "goal_sha256": self.goal_sha256,
-            "requested_keys": list(self.requested_keys),
-            "required_keys": list(self.required_keys),
-            "budget_chars": self.budget_chars,
-            "payload_chars": self.payload_chars,
-            "entries": [entry.to_dict() for entry in self.entries],
-            "omissions": [omission.to_dict() for omission in self.omissions],
-        }
-
-    def to_dict(self) -> dict[str, Any]:
-        payload = self._body_dict()
-        payload["packet_sha256"] = self.packet_sha256
-        return payload
+_unwrapped_build_context_packet = getattr(
+    _impl,
+    "_context_packet_unwrapped_build_context_packet",
+    _impl.build_context_packet,
+)
+_impl._context_packet_unwrapped_build_context_packet = _unwrapped_build_context_packet
+_unwrapped_build_node_context_packet = getattr(
+    _impl,
+    "_context_packet_unwrapped_build_node_context_packet",
+    _impl.build_node_context_packet,
+)
+_impl._context_packet_unwrapped_build_node_context_packet = _unwrapped_build_node_context_packet
 
 
 def build_context_packet(
@@ -182,171 +151,103 @@ def build_context_packet(
     values: Mapping[str, Any],
     context_keys: Sequence[str],
     required_keys: Sequence[str] = (),
-    budget_chars: int = DEFAULT_CONTEXT_BUDGET_CHARS,
-) -> ContextPacket:
-    """Build a deterministic, bounded packet from explicitly selected values.
+    budget_chars: int = _impl.DEFAULT_CONTEXT_BUDGET_CHARS,
+    max_packet_chars: int = _impl.DEFAULT_CONTEXT_PACKET_MAX_CHARS,
+) -> Any:
+    """Build from one detached generation of strict plain-JSON values."""
 
-    Required keys are admitted before optional keys so optional material cannot
-    crowd out a requirement. Optional entries are admitted whole or omitted;
-    values are never truncated into a different fact.
-    """
-
-    requested = _dedupe(context_keys)
-    required = _dedupe(required_keys)
+    requested = _impl._normalize_key_sequence(context_keys, field="context_keys")
+    required = _impl._normalize_key_sequence(
+        required_keys,
+        field="context_required_keys",
+    )
+    _impl._validate_key_declarations(requested, required)
     requested_set = set(requested)
-
     unknown_required = [key for key in required if key not in requested_set]
     if unknown_required:
-        raise ContextPacketConfigurationError(
-            "required context keys must also appear in context_keys: " + ", ".join(unknown_required)
+        raise _impl.ContextPacketConfigurationError(
+            "required context keys must also appear in context_keys: "
+            + ", ".join(unknown_required)
         )
-    if budget_chars <= 0:
-        raise ContextPacketConfigurationError("context packet budget_chars must be > 0")
 
-    required_set = set(required)
-    admission_order = list(required) + [key for key in requested if key not in required_set]
-    entries: list[ContextPacketEntry] = []
-    omissions: list[ContextPacketOmission] = []
-    payload_chars = 0
-
-    for key in admission_order:
-        is_required = key in required_set
-
-        if _sensitive_key(key):
-            if is_required:
-                raise SensitiveContextKeyError(f"required context key '{key}' is credential-like and cannot be packetized")
-            omissions.append(ContextPacketOmission(key=key, reason="sensitive_key"))
-            continue
-
-        if key not in values:
-            if is_required:
-                raise MissingRequiredContextError(f"required context key '{key}' is missing")
-            omissions.append(ContextPacketOmission(key=key, reason="missing"))
-            continue
-
-        try:
-            canonical = _canonical_json(values[key])
-        except ContextPacketSerializationError:
-            if is_required:
-                raise ContextPacketSerializationError(f"required context key '{key}' is not canonical JSON")
-            omissions.append(ContextPacketOmission(key=key, reason="non_json"))
-            continue
-
-        chars = len(canonical)
-        digest = _sha256(canonical)
-        if payload_chars + chars > budget_chars:
-            if is_required:
-                raise ContextPacketBudgetError(
-                    f"required context key '{key}' ({chars} chars) does not fit remaining packet budget "
-                    f"({budget_chars - payload_chars} chars)"
-                )
-            omissions.append(
-                ContextPacketOmission(
-                    key=key,
-                    reason="budget",
-                    sha256=digest,
-                    chars=chars,
-                )
-            )
-            continue
-
-        entries.append(
-            ContextPacketEntry(
-                key=key,
-                canonical_json=canonical,
-                sha256=digest,
-                chars=chars,
-            )
-        )
-        payload_chars += chars
-
-    body = {
-        "version": PACKET_VERSION,
-        "node_id": str(node_id),
-        "node_name": str(node_name),
-        "goal_sha256": _sha256(str(goal_context)),
-        "requested_keys": list(requested),
-        "required_keys": list(required),
-        "budget_chars": int(budget_chars),
-        "payload_chars": payload_chars,
-        "entries": [entry.to_dict() for entry in entries],
-        "omissions": [omission.to_dict() for omission in omissions],
-    }
-    packet_sha256 = _sha256(_canonical_json(body))
-
-    return ContextPacket(
-        node_id=str(node_id),
-        node_name=str(node_name),
-        goal_sha256=body["goal_sha256"],
-        requested_keys=requested,
-        required_keys=required,
-        budget_chars=int(budget_chars),
-        payload_chars=payload_chars,
-        entries=tuple(entries),
-        omissions=tuple(omissions),
-        packet_sha256=packet_sha256,
+    resolved_budget = _impl._parse_integer_bound(
+        budget_chars,
+        field="context packet budget_chars",
     )
+    if resolved_budget <= 0:
+        raise _impl.ContextPacketConfigurationError(
+            "context packet budget_chars must be > 0"
+        )
+    resolved_max_packet = _impl._parse_integer_bound(
+        max_packet_chars,
+        field="context_packet_max_chars",
+    )
+    if resolved_max_packet <= 0:
+        raise _impl.ContextPacketConfigurationError(
+            "context_packet_max_chars must be > 0"
+        )
+    if resolved_max_packet > _impl.HARD_CONTEXT_PACKET_MAX_CHARS:
+        raise _impl.ContextPacketConfigurationError(
+            "context_packet_max_chars exceeds framework hard maximum "
+            f"({resolved_max_packet} > {_impl.HARD_CONTEXT_PACKET_MAX_CHARS})"
+        )
 
-
-def build_node_context_packet(*, node_spec: Any, buffer: Any, goal_context: str) -> ContextPacket | None:
-    """Build a packet from an orchestrator NodeSpec/DataBuffer-like pair.
-
-    The feature is opt-in: a node only receives a packet when it declares a
-    non-empty ``context_keys`` extra field. ``context_required_keys`` and
-    ``context_char_budget`` are optional companion fields.
-    """
-
-    context_keys = list(getattr(node_spec, "context_keys", None) or [])
-    if not context_keys:
-        return None
-
-    required_keys = list(getattr(node_spec, "context_required_keys", None) or [])
-    raw_budget = getattr(node_spec, "context_char_budget", DEFAULT_CONTEXT_BUDGET_CHARS)
-    try:
-        budget_chars = int(raw_budget)
-    except (TypeError, ValueError) as exc:
-        raise ContextPacketConfigurationError("context_char_budget must be an integer") from exc
-
-    values = buffer.read_all()
-    return build_context_packet(
-        node_id=getattr(node_spec, "id", ""),
-        node_name=getattr(node_spec, "name", ""),
+    source_values = _capture_plain_values(values)
+    detached_values = _detach_selected_values(source_values, requested)
+    return _unwrapped_build_context_packet(
+        node_id=node_id,
+        node_name=node_name,
         goal_context=goal_context,
-        values=values,
-        context_keys=context_keys,
-        required_keys=required_keys,
-        budget_chars=budget_chars,
+        values=detached_values,
+        context_keys=requested,
+        required_keys=required,
+        budget_chars=resolved_budget,
+        max_packet_chars=resolved_max_packet,
     )
 
 
-def render_context_packet(packet: ContextPacket) -> str:
-    """Render a compact worker-facing prompt block."""
+class _CapturedBuffer:
+    __slots__ = ("_values",)
 
-    lines = [
-        "--- Context Packet (bounded handoff) ---",
-        f"version: {packet.version}",
-        f"packet_sha256: {packet.packet_sha256}",
-        f"goal_sha256: {packet.goal_sha256}",
-        f"payload_chars: {packet.payload_chars}/{packet.budget_chars}",
-        "Use only supplied entry values as facts from this packet; omission hashes prove identity, not content.",
-    ]
+    def __init__(self, values: dict[str, Any]) -> None:
+        self._values = values
 
-    if packet.entries:
-        lines.append("entries:")
-        for entry in packet.entries:
-            lines.append(f"- {entry.key} [sha256={entry.sha256}; chars={entry.chars}]: {entry.canonical_json}")
-    else:
-        lines.append("entries: []")
+    def read_all(self) -> dict[str, Any]:
+        return dict.copy(self._values)
 
-    if packet.omissions:
-        lines.append("omissions:")
-        for omission in packet.omissions:
-            metadata = [f"reason={omission.reason}"]
-            if omission.sha256 is not None:
-                metadata.append(f"sha256={omission.sha256}")
-            if omission.chars is not None:
-                metadata.append(f"chars={omission.chars}")
-            lines.append(f"- {omission.key} [{'; '.join(metadata)}]")
 
-    lines.append("--- End Context Packet ---")
-    return "\n".join(lines)
+def build_node_context_packet(
+    *,
+    node_spec: Any,
+    buffer: Any,
+    goal_context: str,
+) -> Any:
+    """Build from one captured outer buffer generation."""
+
+    source_values = _capture_plain_values(buffer.read_all())
+    return _unwrapped_build_node_context_packet(
+        node_spec=node_spec,
+        buffer=_CapturedBuffer(source_values),
+        goal_context=goal_context,
+    )
+
+
+# The retained implementation resolves these functions from its module globals
+# at call time. Replace those seams, then expose its public/test-facing API.
+_impl._authorized_buffer_keys = _authorized_buffer_keys
+_impl.build_context_packet = build_context_packet
+_impl.build_node_context_packet = build_node_context_packet
+
+for _name in dir(_impl):
+    if _name.startswith("__") or _name in {
+        "_authorized_buffer_keys",
+        "_context_packet_unwrapped_build_context_packet",
+        "_context_packet_unwrapped_build_node_context_packet",
+    }:
+        continue
+    globals()[_name] = getattr(_impl, _name)
+
+globals()["_authorized_buffer_keys"] = _authorized_buffer_keys
+globals()["build_context_packet"] = build_context_packet
+globals()["build_node_context_packet"] = build_node_context_packet
+__all__ = [name for name in dir(_impl) if not name.startswith("_")]
