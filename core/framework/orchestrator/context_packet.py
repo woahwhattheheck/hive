@@ -134,21 +134,13 @@ _unwrapped_build_context_packet = getattr(
     "_context_packet_unwrapped_build_context_packet",
     _impl.build_context_packet,
 )
-setattr(
-    _impl,
-    "_context_packet_unwrapped_build_context_packet",
-    _unwrapped_build_context_packet,
-)
+_impl._context_packet_unwrapped_build_context_packet = _unwrapped_build_context_packet
 _unwrapped_build_node_context_packet = getattr(
     _impl,
     "_context_packet_unwrapped_build_node_context_packet",
     _impl.build_node_context_packet,
 )
-setattr(
-    _impl,
-    "_context_packet_unwrapped_build_node_context_packet",
-    _unwrapped_build_node_context_packet,
-)
+_impl._context_packet_unwrapped_build_node_context_packet = _unwrapped_build_node_context_packet
 
 
 def build_context_packet(
