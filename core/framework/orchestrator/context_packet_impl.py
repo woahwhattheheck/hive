@@ -84,15 +84,42 @@ def _canonical_json(value: Any) -> str:
         raise ContextPacketSerializationError(f"context value is not canonical JSON: {exc}") from exc
 
 
-def _dedupe(values: Sequence[str]) -> tuple[str, ...]:
+def _normalize_key_sequence(values: Any, *, field: str) -> tuple[str, ...]:
+    """Validate and deduplicate one declared context-key sequence.
+
+    NodeSpec intentionally allows extra fields, so context-packet extras do not
+    receive Pydantic's normal ``list[str]`` validation. Treating a scalar string
+    as a sequence would split one key into characters, while coercing arbitrary
+    values with ``str()`` could alias identities or copy caller data into packet
+    metadata. Require an actual non-string sequence of exact strings instead.
+    """
+
+    if isinstance(values, (str, bytes, bytearray)) or not isinstance(values, Sequence):
+        raise ContextPacketConfigurationError(f"{field} must be a sequence of strings")
+
     seen: set[str] = set()
     result: list[str] = []
-    for raw in values:
-        key = str(raw)
-        if key not in seen:
-            result.append(key)
-            seen.add(key)
+    for index, raw in enumerate(values):
+        if type(raw) is not str:
+            raise ContextPacketConfigurationError(
+                f"{field}[{index}] must be a string, not {type(raw).__name__}"
+            )
+        if raw not in seen:
+            result.append(raw)
+            seen.add(raw)
     return tuple(result)
+
+
+def _parse_integer_bound(value: Any, *, field: str) -> int:
+    """Parse an integer config bound without bool/float truncation."""
+
+    if type(value) is int:
+        return value
+    if type(value) is str:
+        candidate = value.strip()
+        if re.fullmatch(r"[0-9]+", candidate):
+            return int(candidate)
+    raise ContextPacketConfigurationError(f"{field} must be an integer")
 
 
 def _validate_key_declarations(requested: tuple[str, ...], required: tuple[str, ...]) -> None:
@@ -118,7 +145,6 @@ def _validate_key_declarations(requested: tuple[str, ...], required: tuple[str, 
 def _normalize_key_name(key: str) -> str:
     """Normalize snake/kebab/camel/Pascal key names for secret screening."""
 
-    # ``accessToken`` -> ``access_Token`` and ``APIKey`` -> ``API_Key``.
     split_camel = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", key)
     split_acronym = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1_\2", split_camel)
     return re.sub(r"[^a-z0-9]+", "_", split_acronym.casefold()).strip("_")
@@ -295,8 +321,6 @@ def _build_packet_object(
 def _render_context_packet_text(packet: ContextPacket) -> str:
     """Render prompt-safe packet text without performing bound assertions."""
 
-    # Canonical JSON is used for entry rendering so context key names and string
-    # values cannot create new prompt lines or delimiters via embedded controls.
     entries_json = _canonical_json([entry.to_dict() for entry in packet.entries])
     reason_counts = dict(sorted(Counter(omission.reason for omission in packet.omissions).items()))
     omissions_summary = _canonical_json({"count": len(packet.omissions), "reasons": reason_counts})
@@ -372,8 +396,8 @@ def build_context_packet(
     independently bounds both that text and canonical structured packet JSON.
     """
 
-    requested = _dedupe(context_keys)
-    required = _dedupe(required_keys)
+    requested = _normalize_key_sequence(context_keys, field="context_keys")
+    required = _normalize_key_sequence(required_keys, field="context_required_keys")
     _validate_key_declarations(requested, required)
     requested_set = set(requested)
 
@@ -383,17 +407,17 @@ def build_context_packet(
             "required context keys must also appear in context_keys: " + ", ".join(unknown_required)
         )
 
-    try:
-        resolved_budget = int(budget_chars)
-    except (TypeError, ValueError) as exc:
-        raise ContextPacketConfigurationError("context packet budget_chars must be an integer") from exc
+    resolved_budget = _parse_integer_bound(
+        budget_chars,
+        field="context packet budget_chars",
+    )
     if resolved_budget <= 0:
         raise ContextPacketConfigurationError("context packet budget_chars must be > 0")
 
-    try:
-        resolved_max_packet = int(max_packet_chars)
-    except (TypeError, ValueError) as exc:
-        raise ContextPacketConfigurationError("context_packet_max_chars must be an integer") from exc
+    resolved_max_packet = _parse_integer_bound(
+        max_packet_chars,
+        field="context_packet_max_chars",
+    )
     if resolved_max_packet <= 0:
         raise ContextPacketConfigurationError("context_packet_max_chars must be > 0")
     if resolved_max_packet > HARD_CONTEXT_PACKET_MAX_CHARS:
@@ -454,8 +478,6 @@ def build_context_packet(
             required_entries.append(entry)
         else:
             optional_entries.append(entry)
-            # Start optional serializable values as budget omissions, then
-            # promote them one-by-one in priority order if both packet forms fit.
             omission_by_key[key] = ContextPacketOmission(
                 key=key,
                 reason="budget",
@@ -517,9 +539,6 @@ def _authorized_buffer_keys(node_spec: Any, values: Mapping[str, Any]) -> set[st
     """Mirror the node's existing effective shared-buffer read authority."""
 
     input_keys = list(getattr(node_spec, "input_keys", None) or [])
-    # DataBuffer represents unrestricted reads as an empty allow-set. The
-    # scoped-buffer builder only adds framework-managed ``_`` keys when a node
-    # already has an explicit read set, so output-only nodes remain unrestricted.
     if not input_keys:
         return None
 
@@ -539,12 +558,20 @@ def build_node_context_packet(*, node_spec: Any, buffer: Any, goal_context: str)
     companion fields.
     """
 
-    raw_context_keys = list(getattr(node_spec, "context_keys", None) or [])
-    if not raw_context_keys:
+    raw_context_keys = getattr(node_spec, "context_keys", None)
+    if raw_context_keys is None:
+        return None
+    context_keys = _normalize_key_sequence(raw_context_keys, field="context_keys")
+    if not context_keys:
         return None
 
-    context_keys = _dedupe(raw_context_keys)
-    required_keys = _dedupe(list(getattr(node_spec, "context_required_keys", None) or []))
+    raw_required_keys = getattr(node_spec, "context_required_keys", ())
+    if raw_required_keys is None:
+        raw_required_keys = ()
+    required_keys = _normalize_key_sequence(
+        raw_required_keys,
+        field="context_required_keys",
+    )
     _validate_key_declarations(context_keys, required_keys)
 
     raw_budget = getattr(node_spec, "context_char_budget", DEFAULT_CONTEXT_BUDGET_CHARS)
@@ -553,14 +580,14 @@ def build_node_context_packet(*, node_spec: Any, buffer: Any, goal_context: str)
         "context_packet_max_chars",
         DEFAULT_CONTEXT_PACKET_MAX_CHARS,
     )
-    try:
-        budget_chars = int(raw_budget)
-    except (TypeError, ValueError) as exc:
-        raise ContextPacketConfigurationError("context_char_budget must be an integer") from exc
-    try:
-        max_packet_chars = int(raw_max_packet)
-    except (TypeError, ValueError) as exc:
-        raise ContextPacketConfigurationError("context_packet_max_chars must be an integer") from exc
+    budget_chars = _parse_integer_bound(
+        raw_budget,
+        field="context_char_budget",
+    )
+    max_packet_chars = _parse_integer_bound(
+        raw_max_packet,
+        field="context_packet_max_chars",
+    )
 
     values = buffer.read_all()
     authorized = _authorized_buffer_keys(node_spec, values)
