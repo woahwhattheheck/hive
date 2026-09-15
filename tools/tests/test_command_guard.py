@@ -74,11 +74,18 @@ WINDOWS_ALIAS_COMMANDS = [
 WINDOWS_OBJECT_KILL_COMMANDS = [
     "(Get-Process chrome).Kill()",
     "(gps bridge_host).Kill()",
+    "(Get-Process chrome)[0].Kill()",
     "gps chrome | ForEach-Object { $_.Kill() }",
     "gps chrome | % { $_.Kill() }",
+    "Get-Process chrome | foreach { $_.Kill() }",
     "Get-Process msedge | ForEach-Object { Stop-Process -InputObject $_ }",
     "gps chrome | % { kill -InputObject $_ }",
+    "Get-Process chrome | ForEach-Object { Stop-Process $_ }",
+    "gps bridge_host | foreach { spps -InputObject $PSItem }",
+    "Get-Process chrome | ForEach-Object { $_ | Stop-Process }",
     "Get-Process chrome | ForEach-Object Stop-Process",
+    "Get-Process chrome | ForEach-Object -MemberName Kill",
+    "gps chrome | % -MemberName Kill",
 ]
 
 
@@ -127,8 +134,12 @@ BENIGN_COMMANDS = [
     "gps & echo chrome | kill -Id 1234",
     # Process-object inspection remains read-only.
     "(Get-Process chrome).Id",
+    "(Get-Process chrome)[0].Id",
     "gps chrome | ForEach-Object { $_.Name }",
     "gps chrome | % { Write-Output $_ }",
+    "Get-Process chrome | foreach { $_.Name }",
+    "Get-Process chrome | ForEach-Object -MemberName Name",
+    "gps chrome | % -MemberName Id",
 ]
 
 
