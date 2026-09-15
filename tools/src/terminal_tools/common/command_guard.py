@@ -42,6 +42,8 @@ _KILL_VERB = r"(?:pkill|killall|kill)"
 _PS_STOP = r"(?:stop-process|spps|kill)"
 _PS_GET = r"(?:get-process|gps|ps)"
 _PS_START = r"(?:start-process|saps|start)"
+_PS_FOREACH = r"(?:\b(?:foreach-object|foreach)\b|%)"
+_PS_ITEM = r"(?:\$_|\$psitem)"
 
 _BLOCK_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
     (
@@ -93,6 +95,36 @@ _BLOCK_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
         # when `spps` is actually aimed at a generic PID.
         re.compile(rf"\b{_PS_GET}\b[^\n;&]*{_PROTECTED}[^\n;&]*\|\s*(?:[^|\n;&]*\|\s*)?{_PS_STOP}\b", re.IGNORECASE),
         "kills browser/runtime processes (PowerShell Get-Process | Stop-Process)",
+    ),
+    (
+        # PowerShell Process objects expose a .Kill() method. Direct
+        # `(Get-Process chrome).Kill()` and ForEach-Object scriptblocks
+        # terminate the same protected processes without invoking a stop
+        # cmdlet, so the alias-aware patterns above never see a stop verb.
+        # Keep the span inside one command segment; pipe crossing is
+        # intentional because it carries the protected Process object.
+        re.compile(
+            rf"\b{_PS_GET}\b[^\n;&]*{_PROTECTED}[^\n;&]*"
+            rf"(?:\)\s*(?:\[[^\]\n;&]+\]\s*)?\.\s*kill\s*\("
+            rf"|\|[^\n;&]*{_PS_FOREACH}[^\n;&]*{_PS_ITEM}\s*\.\s*kill\s*\()",
+            re.IGNORECASE,
+        ),
+        "kills browser/runtime processes (PowerShell Process.Kill)",
+    ),
+    (
+        # ForEach-Object can pass each protected Process object to a stop
+        # cmdlet via -InputObject/positional input, pipe $_/$PSItem onward,
+        # use command-name shorthand, or invoke the Kill member directly.
+        re.compile(
+            rf"\b{_PS_GET}\b[^\n;&]*{_PROTECTED}[^\n;&]*\|[^\n;&]*"
+            rf"{_PS_FOREACH}[^\n;&]*(?:"
+            rf"-membername\s+kill\b"
+            rf"|\b{_PS_STOP}\b[^\n;&}}]*(?:-inputobject\s+)?{_PS_ITEM}"
+            rf"|{_PS_ITEM}\s*\|[^\n;&}}]*\b{_PS_STOP}\b"
+            rf"|\b{_PS_STOP}\b\s*(?:[}}]|$))",
+            re.IGNORECASE,
+        ),
+        "kills browser/runtime processes (PowerShell ForEach-Object stop)",
     ),
     (
         # cmd / Windows: taskkill /IM chrome.exe  (or /F /IM ...)

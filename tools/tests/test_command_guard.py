@@ -71,6 +71,23 @@ WINDOWS_ALIAS_COMMANDS = [
     "Get-WmiObject Win32_Process -Filter \"Name='msedge.exe'\" | Remove-CimInstance",
 ]
 
+WINDOWS_OBJECT_KILL_COMMANDS = [
+    "(Get-Process chrome).Kill()",
+    "(gps bridge_host).Kill()",
+    "(Get-Process chrome)[0].Kill()",
+    "gps chrome | ForEach-Object { $_.Kill() }",
+    "gps chrome | % { $_.Kill() }",
+    "Get-Process chrome | foreach { $_.Kill() }",
+    "Get-Process msedge | ForEach-Object { Stop-Process -InputObject $_ }",
+    "gps chrome | % { kill -InputObject $_ }",
+    "Get-Process chrome | ForEach-Object { Stop-Process $_ }",
+    "gps bridge_host | foreach { spps -InputObject $PSItem }",
+    "Get-Process chrome | ForEach-Object { $_ | Stop-Process }",
+    "Get-Process chrome | ForEach-Object Stop-Process",
+    "Get-Process chrome | ForEach-Object -MemberName Kill",
+    "gps chrome | % -MemberName Kill",
+]
+
 BENIGN_COMMANDS = [
     # Read-only process inspection (workers legitimately did these too)
     "ps aux | grep -i chrome | head -5",
@@ -114,10 +131,20 @@ BENIGN_COMMANDS = [
     "gps; echo chrome | spps -Id 1234",
     "Get-Process; Write-Output chrome | Stop-Process -Id 99",
     "gps & echo chrome | kill -Id 1234",
+    # Process-object inspection remains read-only.
+    "(Get-Process chrome).Id",
+    "(Get-Process chrome)[0].Id",
+    "gps chrome | ForEach-Object { $_.Name }",
+    "gps chrome | % { Write-Output $_ }",
+    "Get-Process chrome | foreach { $_.Name }",
+    "Get-Process chrome | ForEach-Object -MemberName Name",
+    "gps chrome | % -MemberName Id",
 ]
 
 
-@pytest.mark.parametrize("cmd", INCIDENT_COMMANDS + ESCALATION_COMMANDS + WINDOWS_ALIAS_COMMANDS)
+@pytest.mark.parametrize(
+    "cmd", INCIDENT_COMMANDS + ESCALATION_COMMANDS + WINDOWS_ALIAS_COMMANDS + WINDOWS_OBJECT_KILL_COMMANDS
+)
 def test_kill_and_launch_commands_blocked(cmd):
     msg = check_command(cmd)
     assert msg is not None, f"guard MISSED: {cmd!r}"
