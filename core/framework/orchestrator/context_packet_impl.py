@@ -143,11 +143,13 @@ def _validate_key_declarations(requested: tuple[str, ...], required: tuple[str, 
 
 
 def _normalize_key_name(key: str) -> str:
-    """Normalize snake/kebab/camel/Pascal key names for secret screening."""
+    """Normalize separators, case boundaries, and alpha-digit boundaries for screening."""
 
     split_camel = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", key)
     split_acronym = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1_\2", split_camel)
-    return re.sub(r"[^a-z0-9]+", "_", split_acronym.casefold()).strip("_")
+    split_alpha_digit = re.sub(r"([A-Za-z])([0-9])", r"\1_\2", split_acronym)
+    split_digit_alpha = re.sub(r"([0-9])([A-Za-z])", r"\1_\2", split_alpha_digit)
+    return re.sub(r"[^a-z0-9]+", "_", split_digit_alpha.casefold()).strip("_")
 
 
 def _sensitive_key(key: str) -> bool:
